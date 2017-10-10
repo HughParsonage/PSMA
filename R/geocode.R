@@ -50,8 +50,8 @@ geocode <- function(flat_number = NULL,
     }
   } else {
     if (!is.null(street_type)) {
-      if (is.null(flat_number)) NA_integer_ else flat_number
-      if (is.null(number_first)) NA_integer_ else number_first
+      if (is.null(flat_number)) flat_number <-  NA_integer_
+      if (is.null(number_first)) number_first <- NA_integer_
 
       tryCatch(flat_number <- as.integer(flat_number),
                warning = function(e) {
