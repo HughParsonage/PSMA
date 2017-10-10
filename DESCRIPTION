@@ -8,7 +8,8 @@ License: What license is it under?
 Imports:
   data.table,
   magrittr,
-  hutils
+  hutils,
+  fastmatch
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1

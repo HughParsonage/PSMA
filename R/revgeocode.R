@@ -6,6 +6,8 @@
 #' @importFrom magrittr %>%
 #' @importFrom hutils haversine_distance
 #' @importFrom hutils set_cols_first
+#' @importFrom hutils %notin%
+#' @importFrom fastmatch %fin%
 #' @examples
 #' revgeocode(-37.8006, 144.9618)
 #'

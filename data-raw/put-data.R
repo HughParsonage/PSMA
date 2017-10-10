@@ -114,10 +114,22 @@ STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <-
   setkeyv("STREET_LOCALITY_INTRNL_ID") %>%
   .[]
 
+street_type_decoder <- fread("data-raw/street_type_decoder.tsv")
+set_unique_key(street_type_decoder, street_abbrev)
+# 2big4Github
+#
+# devtools::use_data(ADDRESS_DETAIL_ID__by__LATLON,
+#                    STREET_ID_vs_ADDRESS_ID,
+#                    STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE,
+#                    street_type_decoder,
+#                    internal = TRUE,
+#                    overwrite = TRUE)
 
 devtools::use_data(ADDRESS_DETAIL_ID__by__LATLON,
                    STREET_ID_vs_ADDRESS_ID,
                    STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE,
-                   internal = TRUE,
+                   compress = "xz",
                    overwrite = TRUE)
+
+devtools::use_data(street_type_decoder, overwrite = TRUE)
 

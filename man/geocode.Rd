@@ -5,7 +5,8 @@
 \title{Geocode address}
 \usage{
 geocode(flat_number = NULL, number_first = NULL, building_name = NULL,
-  street_name = NULL, street_type = NULL, postcode)
+  street_name = NULL, street_type = NULL, postcode,
+  attempt_decode_street_abbrev = FALSE)
 }
 \arguments{
 \item{flat_number, number_first, street_name, street_type, postcode}{The address to be geocoded.}
@@ -17,4 +18,11 @@ geocode(flat_number = NULL, number_first = NULL, building_name = NULL,
 }
 \description{
 Geocode address
+}
+\examples{
+geocode(flat_number = NA_character_,
+        number_first = 8L,
+        street_name = "MALVINA",
+        street_type = "PLACE",
+        postcode = 3053L)
 }
