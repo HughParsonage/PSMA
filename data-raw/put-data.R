@@ -1,4 +1,6 @@
 library(data.table)
+library(magrittr)
+library(hutils)
 
 ADDRESS_DETAIL_PID__by__LATLON <-
   dir(pattern = "_ADDRESS_DEFAULT_GEOCODE_psv",
@@ -70,7 +72,9 @@ STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE <-
          select = c("STREET_LOCALITY_PID",
                     "STREET_NAME",
                     "STREET_TYPE_CODE")) %>%
-  rbindlist(use.names = TRUE, fill = TRUE)
+  rbindlist(use.names = TRUE, fill = TRUE) %>%
+  # Some unnamed streets
+  .[complete.cases(.)]
 
 
 # Reduce the size of lookup tables by converting

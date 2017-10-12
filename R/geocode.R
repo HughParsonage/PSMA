@@ -50,7 +50,10 @@ geocode <- function(flat_number = NULL,
     }
   } else {
     if (!is.null(street_type)) {
-      if (is.null(flat_number)) flat_number <-  NA_integer_
+      flat_number_null <- is.null(flat_number)
+      if (flat_number_null) {
+        flat_number <-  NA_integer_
+      }
       if (is.null(number_first)) number_first <- NA_integer_
 
       tryCatch(flat_number <- as.integer(flat_number),
@@ -116,15 +119,25 @@ geocode <- function(flat_number = NULL,
             .[["street_type"]]
 
         } else {
+
           stop("street_type entry ", which_bad_STREET_TYPES,
-               " (", street_type[which_bad_STREET_TYPES], ") ",
+               " (",
+               paste0(head(unique(STREET_TYPE[which_bad_STREET_TYPES])),
+                      collapse = "\n"),
+               if (uniqueN(STREET_TYPE[which_bad_STREET_TYPES]) > 5) {
+                 " (list truncated)"
+               },
+               ") ",
                " was not a permitted street type.")
+
         }
       }
 
       street_addresses_in_postcodes <-
         STREET_ID_vs_ADDRESS_ID %>%
-        .[POSTCODE %fin% postcode]
+        .[POSTCODE %in% postcode] %>%
+        .[STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, on = "STREET_LOCALITY_INTRNL_ID"]
+
 
       input <-
         data.table(FLAT_NUMBER = flat_number,
@@ -134,19 +147,17 @@ geocode <- function(flat_number = NULL,
                    POSTCODE = postcode) %>%
         .[, ordering := .I]
 
-      input_by_STREET_CODE <-
-        STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE[input,
-                                                          on = c("STREET_NAME",
-                                                                 "STREET_TYPE_CODE")]
-
       addresses_by_ADDRESS_DETAIL_INTRNL_ID <-
-        street_addresses_in_postcodes[input_by_STREET_CODE,
-                                      on = c("FLAT_NUMBER", "NUMBER_FIRST", "STREET_LOCALITY_INTRNL_ID", "POSTCODE"),
+        street_addresses_in_postcodes[input,
+                                      on = c(if (!flat_number_null) "FLAT_NUMBER",
+                                             "NUMBER_FIRST",
+                                             "POSTCODE"),
                                       nomatch=0L,
                                       # If multiple places match, must return
                                       # only one. TODO : flat_number
                                       mult='first'] %>%
-        setkeyv("ADDRESS_DETAIL_INTRNL_ID")
+        setkeyv("ADDRESS_DETAIL_INTRNL_ID") %>%
+        .[input, on = "ordering", mult='first']
 
       out <- ADDRESS_DETAIL_ID__by__LATLON[addresses_by_ADDRESS_DETAIL_INTRNL_ID,
                                            j = list(ordering, LATITUDE, LONGITUDE),
