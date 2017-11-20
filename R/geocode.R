@@ -136,8 +136,14 @@ geocode <- function(flat_number = NULL,
       street_addresses_in_postcodes <-
         STREET_ID_vs_ADDRESS_ID %>%
         .[POSTCODE %in% postcode] %>%
-        .[STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, on = "STREET_LOCALITY_INTRNL_ID"]
-
+        .[STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE,
+          on = "STREET_LOCALITY_INTRNL_ID",
+          nomatch=0L] %>%
+        .[STREET_NAME %in% toupper(street_name)] %>%
+        setkeyv(c("POSTCODE",
+                  "STREET_NAME",
+                  "STREET_TYPE_CODE",
+                  "NUMBER_FIRST"))
 
       input <-
         data.table(FLAT_NUMBER = flat_number,
@@ -145,14 +151,20 @@ geocode <- function(flat_number = NULL,
                    STREET_NAME = toupper(street_name),
                    STREET_TYPE_CODE = STREET_TYPE,
                    POSTCODE = postcode) %>%
-        .[, ordering := .I]
+        .[, ordering := .I] %>%
+        setkeyv(c("POSTCODE",
+                  "STREET_NAME",
+                  "STREET_TYPE_CODE",
+                  "NUMBER_FIRST"))
 
       addresses_by_ADDRESS_DETAIL_INTRNL_ID <-
         street_addresses_in_postcodes[input,
-                                      on = c(if (!flat_number_null) "FLAT_NUMBER",
-                                             "NUMBER_FIRST",
-                                             "POSTCODE"),
+                                      on = c("POSTCODE",
+                                             "STREET_NAME",
+                                             "STREET_TYPE_CODE",
+                                             "NUMBER_FIRST"),
                                       nomatch=0L,
+                                      roll="nearest",
                                       # If multiple places match, must return
                                       # only one. TODO : flat_number
                                       mult='first'] %>%
@@ -160,10 +172,8 @@ geocode <- function(flat_number = NULL,
         .[input, on = "ordering", mult='first']
 
       out <- ADDRESS_DETAIL_ID__by__LATLON[addresses_by_ADDRESS_DETAIL_INTRNL_ID,
-                                           j = list(ordering, LATITUDE, LONGITUDE),
+                                           list(ordering, LATITUDE, LONGITUDE),
                                            on = "ADDRESS_DETAIL_INTRNL_ID"]
-
-
 
     }
   }
