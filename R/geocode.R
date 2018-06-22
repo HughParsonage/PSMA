@@ -180,6 +180,7 @@ geocode <- function(flat_number = NULL,
 
   setorderv(out, "ordering")
   out[]
-
-
 }
+
+
+
