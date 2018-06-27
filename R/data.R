@@ -1,4 +1,7 @@
 #' @title Datasets used internall for decoding
+#' @description These are internal data tables, only documented here because their
+#' size makes lazily loading them from a \code{R/sysdata.dta} file impracticable
+#' with a GitHub hosted package.
 #' @name data
 #' @keywords data
 NULL
