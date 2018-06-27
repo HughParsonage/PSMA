@@ -1,5 +1,8 @@
 #' Add latitude and longitude columns to a data frame of addresses
-#' @param DT
+#' @param DT A \code{data.frame} to which columns will be added.
+#' @param flat_number,number_first,building_name,street_name,street_type,postcode Columns quoted or unquoted to be passed to \code{\link{geocode}}. If \code{NULL}, \code{DT} must the columns spelled the same as the arguments here.
+#' @param new_names Character vector of length-2 specifying the new names in the resulting \code{data.frame} for the latitude and longitude respectively.
+#' @param overwrite If \code{new_names} are present in \code{DT}, should they be overwritten?
 #' @export
 #'
 
@@ -50,11 +53,13 @@ mutate_geocode <- function(DT,
   }
 
 
-  if (any(names(DT) %notin% c(names(formals(geocode)),
-                              "attempt_decode_street_abbrev"))) {
+  if (length(setdiff(setdiff(names(formals(geocode)),
+                             "attempt_decode_street_abbrev"),
+                     names(DT)))) {
     stop("DT requires the following names:\n\t",
-         paste0(setdiff(names(formals(geocode)),
-                        "attempt_decode_street_abbrev"),
+         paste0(setdiff(setdiff(names(formals(geocode)),
+                                "attempt_decode_street_abbrev"),
+                        names(DT)),
                 sep = "\n\t"))
   }
 
@@ -104,6 +109,11 @@ mutate_geocode <- function(DT,
   if (postcode_not_null) {
     resetnames(DT, as.character(substitute(postcode)), "postcode")
   }
+
+  if (dt_was_tibble) {
+    return(tibble::as_tibble(DT))
+  }
+
   DT[]
 }
 
