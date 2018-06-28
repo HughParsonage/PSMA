@@ -54,11 +54,11 @@ geocode <- function(flat_number = NULL,
 
     if (!is.null(building_name)) {
       input <- data.table(BUILDING_NAME = toupper(building_name),
-                          POSTCODE = as.integer(POSTCODE))
-      intput[, ordering := .I]
+                          POSTCODE = as.integer(postcode))
+      input[, ordering := .I]
     } else {
-      input <- data.table(POSTCODE = as.integer(POSTCODE),
-                          ordering = seq_along(POSTCODE))
+      input <- setDT(list(POSTCODE = as.integer(postcode),
+                          ordering = seq_along(postcode)))
     }
   } else {
     if (!is.null(street_type)) {

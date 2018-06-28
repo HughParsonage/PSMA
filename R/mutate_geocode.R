@@ -38,17 +38,26 @@ mutate_geocode <- function(DT,
     flat_number <- NA_character_
     names_formals <- names_formals[names_formals != "flat_number"]
   }
+
   if (number_first_not_null <- !missing(number_first)) {
-    old_number_first <- as.character(substitute(number_first))
-    setnames(DT, old_number_first, "number_first")
+
+    # i.e. if number_first is not a constant like 5 or NA.
+    if (is.symbol(substitute(number_first))) {
+      old_number_first <- as.character(substitute(number_first))
+      setnames(DT, old_number_first, "number_first")
+    }
   }
+
   if (building_name_not_null <- !missing(building_name)) {
-    old_building_name <- as.character(substitute(building_name))
-    setnames(DT, old_building_name, "building_name")
+    if (is.symbol(substitute(building_names))) {
+      old_building_name <- as.character(substitute(building_name))
+      setnames(DT, old_building_name, "building_name")
+    }
   } else if ("building_name" %notchin% names(DT)) {
     building_name <- NA_character_
     names_formals <- names_formals[names_formals != "building_name"]
   }
+
   if (street_name_not_null <- !missing(street_name)) {
     old_street_name <- as.character(substitute(street_name))
     setnames(DT, old_street_name, "street_name")
