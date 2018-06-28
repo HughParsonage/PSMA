@@ -19,14 +19,22 @@ test_that("mutate works with Nick's example", {
   } else {
     load(system.file("extdata", "bne_addresses.rda", package = "PSMA"))
   }
-  bne_addresses$flat_number <- NA_character_
-  bne_addresses$building_name <- NA_character_
+
+  M <- mutate_geocode(bne_addresses, number_first = house_number)
+  M4 <- M[4L, ]
+  expect_equal(M4[["lat"]], -27.467, tol = 0.01)
+  expect_equal(M4[["lon"]], 153.06, tol = 0.01)
+
+
+  BNE <- bne_addresses
+  BNE$flat_number <- NA_character_
+  BNE$building_name <- NA_character_
 
   A <- mutate_geocode(bne_addresses,
                       number_first = house_number)
-  A5 <- A[5L, ]
-  expect_equal(A5[["lat"]], -27.467, tol = 0.01)
-  expect_equal(A5[["lon"]], 153.06, tol = 0.01)
+  A4 <- A[4L, ]
+  expect_equal(A4[["lat"]], -27.467, tol = 0.01)
+  expect_equal(A4[["lon"]], 153.06, tol = 0.01)
 
 
 })

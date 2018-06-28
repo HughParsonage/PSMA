@@ -27,9 +27,16 @@ mutate_geocode <- function(DT,
     DT <- as.data.table(DT)
   }
 
+  names_formals <-
+    setdiff(names(formals(geocode)),
+            "attempt_decode_street_abbrev")
+
   if (flat_number_not_null <- !missing(flat_number)) {
     old_flat_number <- as.character(substitute(flat_number))
     setnames(DT, old_flat_number, "flat_number")
+  } else if ("flat_number" %notchin% names(DT)) {
+    flat_number <- NA_character_
+    names_formals <- names_formals[names_formals != "flat_number"]
   }
   if (number_first_not_null <- !missing(number_first)) {
     old_number_first <- as.character(substitute(number_first))
@@ -38,6 +45,9 @@ mutate_geocode <- function(DT,
   if (building_name_not_null <- !missing(building_name)) {
     old_building_name <- as.character(substitute(building_name))
     setnames(DT, old_building_name, "building_name")
+  } else if ("building_name" %notchin% names(DT)) {
+    building_name <- NA_character_
+    names_formals <- names_formals[names_formals != "building_name"]
   }
   if (street_name_not_null <- !missing(street_name)) {
     old_street_name <- as.character(substitute(street_name))
@@ -53,12 +63,10 @@ mutate_geocode <- function(DT,
   }
 
 
-  if (length(setdiff(setdiff(names(formals(geocode)),
-                             "attempt_decode_street_abbrev"),
+  if (length(setdiff(names_formals,
                      names(DT)))) {
     stop("DT requires the following names:\n\t",
-         paste0(setdiff(setdiff(names(formals(geocode)),
-                                "attempt_decode_street_abbrev"),
+         paste0(setdiff(names_formals,
                         names(DT)),
                 sep = "\n\t"))
   }
