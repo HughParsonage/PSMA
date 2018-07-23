@@ -1,9 +1,10 @@
 #' Add latitude and longitude columns to a data frame of addresses
+#' @aliases add_geocode
 #' @param DT A \code{data.frame} to which columns will be added.
 #' @param flat_number,number_first,building_name,street_name,street_type,postcode Columns quoted or unquoted to be passed to \code{\link{geocode}}. If \code{NULL}, \code{DT} must the columns spelled the same as the arguments here.
 #' @param new_names Character vector of length-2 specifying the new names in the resulting \code{data.frame} for the latitude and longitude respectively.
 #' @param overwrite If \code{new_names} are present in \code{DT}, should they be overwritten?
-#' @export
+#' @export mutate_geocode add_geocode
 #'
 
 mutate_geocode <- function(DT,
@@ -133,6 +134,27 @@ mutate_geocode <- function(DT,
 
   DT[]
 }
+
+add_geocode <- function(DT,
+                        flat_number = NULL,
+                        number_first = NULL,
+                        building_name = NULL,
+                        street_name = NULL,
+                        street_type = NULL,
+                        postcode = NULL,
+                        new_names = c("lat", "lon"),
+                        overwrite = FALSE) {
+  mutate_geocode(DT,
+                 flat_number = NULL,
+                 number_first = NULL,
+                 building_name = NULL,
+                 street_name = NULL,
+                 street_type = NULL,
+                 postcode = NULL,
+                 new_names = c("latitude", "longitude"),
+                 overwrite = FALSE)
+}
+
 
 
 

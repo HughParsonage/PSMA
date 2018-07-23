@@ -2,6 +2,7 @@
 % Please edit documentation in R/mutate_geocode.R
 \name{mutate_geocode}
 \alias{mutate_geocode}
+\alias{add_geocode}
 \title{Add latitude and longitude columns to a data frame of addresses}
 \usage{
 mutate_geocode(DT, flat_number = NULL, number_first = NULL,
