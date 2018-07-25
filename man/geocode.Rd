@@ -9,12 +9,15 @@ geocode(flat_number = NULL, number_first = NULL, building_name = NULL,
   attempt_decode_street_abbrev = FALSE)
 }
 \arguments{
-\item{flat_number, number_first, street_name, street_type, postcode}{The address to be geocoded.}
+\item{flat_number, number_first, street_name, street_type, postcode}{The address to be geocoded. Argument \code{postcode} is mandatory.}
 
 \item{building_name}{If \code{street_name} is not provided, searches for building names in that
 \code{postcode}}
 
-\item{postcode}{Mandatory. Postcode as an integer in which the address is located.}
+\item{attempt_decode_street_abbrev}{Should abbreviated street types be decoded during the geocoding attempt?}
+}
+\value{
+A \code{data.table} of three columns and the same number of rows as the longest argument.
 }
 \description{
 Geocode address
@@ -25,4 +28,13 @@ geocode(flat_number = NA_character_,
         street_name = "MALVINA",
         street_type = "PLACE",
         postcode = 3053L)
+
+load(system.file("extdata", "bne_addresses.rda", package = "PSMA"))
+with(bne_addresses,
+    geocode(flat_number = NA_character_,
+            number_first = house_number,
+            street_name = street_name,
+            street_type = street_type,
+            postcode = postcode))
+
 }

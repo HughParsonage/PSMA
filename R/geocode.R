@@ -1,14 +1,26 @@
 #' Geocode address
-#' @param flat_number,number_first,street_name,street_type,postcode The address to be geocoded.
+#' @param flat_number,number_first,street_name,street_type,postcode The address to be geocoded. Argument \code{postcode} is mandatory.
 #' @param building_name If \code{street_name} is not provided, searches for building names in that
 #' \code{postcode}
-#' @param postcode Mandatory. Postcode as an integer in which the address is located.
+#' @param attempt_decode_street_abbrev Should abbreviated street types be decoded during the geocoding attempt?
 #' @examples
 #' geocode(flat_number = NA_character_,
 #'         number_first = 8L,
 #'         street_name = "MALVINA",
 #'         street_type = "PLACE",
 #'         postcode = 3053L)
+#'
+#' load(system.file("extdata", "bne_addresses.rda", package = "PSMA"))
+#' with(bne_addresses,
+#'     geocode(flat_number = NA_character_,
+#'             number_first = house_number,
+#'             street_name = street_name,
+#'             street_type = street_type,
+#'             postcode = postcode))
+#'
+#' @return A \code{data.table} of three columns and the same number of rows as the longest argument.
+#'
+#'
 #' @export
 
 
@@ -42,11 +54,11 @@ geocode <- function(flat_number = NULL,
 
     if (!is.null(building_name)) {
       input <- data.table(BUILDING_NAME = toupper(building_name),
-                          POSTCODE = as.integer(POSTCODE))
-      intput[, ordering := .I]
+                          POSTCODE = as.integer(postcode))
+      input[, ordering := .I]
     } else {
-      input <- data.table(POSTCODE = as.integer(POSTCODE),
-                          ordering = seq_along(POSTCODE))
+      input <- setDT(list(POSTCODE = as.integer(postcode),
+                          ordering = seq_along(postcode)))
     }
   } else {
     if (!is.null(street_type)) {
@@ -133,6 +145,12 @@ geocode <- function(flat_number = NULL,
         }
       }
 
+      if (!isAttached("PSMA")) {
+        STREET_ID_vs_ADDRESS_ID <- PSMA::STREET_ID_vs_ADDRESS_ID
+        STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <- PSMA::STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE
+        ADDRESS_DETAIL_ID__by__LATLON <- PSMA::ADDRESS_DETAIL_ID__by__LATLON
+      }
+
       street_addresses_in_postcodes <-
         STREET_ID_vs_ADDRESS_ID %>%
         .[POSTCODE %in% postcode] %>%
@@ -180,6 +198,7 @@ geocode <- function(flat_number = NULL,
 
   setorderv(out, "ordering")
   out[]
-
-
 }
+
+
+

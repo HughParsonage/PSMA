@@ -6,7 +6,7 @@ ADDRESS_DETAIL_PID__by__LATLON <-
   dir(pattern = "_ADDRESS_DEFAULT_GEOCODE_psv",
       recursive = TRUE,
       full.names = TRUE,
-      path = "~/Data/PSMA-Geocoded-Address-2017/") %>%
+      path = "~/Data/PSMA-Geocoded-Address-2018/") %>%
   lapply(fread,
          na.strings = "",
          select = c("ADDRESS_DETAIL_PID",
@@ -128,6 +128,12 @@ set_unique_key(street_type_decoder, street_abbrev)
 #                    street_type_decoder,
 #                    internal = TRUE,
 #                    overwrite = TRUE)
+
+provide.dir("tsv")
+fwrite(ADDRESS_DETAIL_ID__by__LATLON, "tsv/ADDRESS_DETAIL_ID__by__LATLON.tsv", sep = "\t")
+fwrite(STREET_ID_vs_ADDRESS_ID, "tsv/STREET_ID_vs_ADDRESS_ID.tsv", sep = "\t")
+fwrite(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, "tsv/STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE.tsv", sep = "\t")
+
 
 devtools::use_data(ADDRESS_DETAIL_ID__by__LATLON,
                    STREET_ID_vs_ADDRESS_ID,
