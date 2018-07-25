@@ -37,4 +37,19 @@ test_that("mutate works with Nick's example", {
   expect_equal(A4[["lon"]], 153.06, tol = 0.01)
 
 
+
+
+  load(system.file("extdata", "bne_addresses.rda", package = "PSMA"))
+
+  BNE <- copy(bne_addresses)
+  BNE$flat_number <- NA_character_
+  BNE$building_name <- NA_character_
+
+  A <- add_geocode(bne_addresses,
+                   number_first = house_number)
+  A4 <- A[4L, ]
+  expect_equal(A4[["latitude"]], -27.467, tol = 0.01)
+  expect_equal(A4[["longitude"]], 153.06, tol = 0.01)
+
+
 })
