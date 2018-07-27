@@ -128,4 +128,11 @@ test_that("Building names", {
   expect_lt(dt[, latitude], -35.2)
   expect_lt(dt[, longitude], 149.15)
   expect_gt(dt[, longitude], 149.14)
+
+  setnames(dt, "flat_number", "unit_no")
+  dt3 <- mutate_geocode(dt, flat_number = unit_no)
+  dt4 <- mutate_geocode(dt, flat_number = 'unit_no', overwrite = TRUE)
+  expect_lt(dt[, longitude], 149.15)
+  expect_gt(dt[, longitude], 149.14)
+
 })

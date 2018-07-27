@@ -71,6 +71,9 @@ test_that("Building names", {
                street_type = "Street",
                postcode = 2602L) %>%
     add_geocode
+
+
+
   dt2 <-
     data.table(flat_number = 3L,
                building_name = "AINSLIE FLATS",
@@ -83,6 +86,10 @@ test_that("Building names", {
   expect_identical(dt, dt2)
   expect_gt(dt[, latitude], -35.5)
   expect_lt(dt[, latitude], -35.2)
+  expect_lt(dt[, longitude], 149.15)
+  expect_gt(dt[, longitude], 149.14)
+  setnames(dt, "flat_number", "unit_no")
+  dt4 <- add_geocode(dt, flat_number = 'unit_no', overwrite = TRUE)
   expect_lt(dt[, longitude], 149.15)
   expect_gt(dt[, longitude], 149.14)
 })
