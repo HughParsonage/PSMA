@@ -33,9 +33,6 @@ get_fst <- function(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
     switch(dt,
            "STREET_ID_vs_ADDRESS_ID" = {
              setindexv(x, "POSTCODE")
-           },
-           "ADDRESS_DETAIL_ID__by__LATLON" = {
-             setindexv(x, c("lat_int"))
            })
 
 
