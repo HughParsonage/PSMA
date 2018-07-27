@@ -45,6 +45,8 @@ geocode <- function(flat_number = NULL,
              stop("Postcode must be an integer (or coercible to such).")
            })
 
+  ordering <- NULL
+
 
   if (is.null(street_name)) {
     if (!is.null(number_first) || !is.null(flat_number)) {
@@ -55,7 +57,7 @@ geocode <- function(flat_number = NULL,
     if (!is.null(building_name)) {
       input <- data.table(BUILDING_NAME = toupper(building_name),
                           POSTCODE = as.integer(postcode))
-      input[, ordering := .I]
+      input[, "ordering" := .I]
     } else {
       input <- setDT(list(POSTCODE = as.integer(postcode),
                           ordering = seq_along(postcode)))
@@ -145,11 +147,19 @@ geocode <- function(flat_number = NULL,
         }
       }
 
-      if (!isAttached("PSMA")) {
-        STREET_ID_vs_ADDRESS_ID <- PSMA::STREET_ID_vs_ADDRESS_ID
-        STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <- PSMA::STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE
-        ADDRESS_DETAIL_ID__by__LATLON <- PSMA::ADDRESS_DETAIL_ID__by__LATLON
-      }
+
+      psma_env <- getOption("PSMA_env", new.env())
+
+      STREET_ID_vs_ADDRESS_ID <-
+        get_fst("STREET_ID_vs_ADDRESS_ID")
+
+      STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <-
+        get_fst("STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE")
+
+      ADDRESS_DETAIL_ID__by__LATLON <-
+        get_fst("ADDRESS_DETAIL_ID__by__LATLON")
+
+
 
       street_addresses_in_postcodes <-
         STREET_ID_vs_ADDRESS_ID %>%
@@ -169,7 +179,7 @@ geocode <- function(flat_number = NULL,
                    STREET_NAME = toupper(street_name),
                    STREET_TYPE_CODE = STREET_TYPE,
                    POSTCODE = postcode) %>%
-        .[, ordering := .I] %>%
+        .[, "ordering" := .I] %>%
         setkeyv(c("POSTCODE",
                   "STREET_NAME",
                   "STREET_TYPE_CODE",

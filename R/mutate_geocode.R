@@ -32,10 +32,7 @@ mutate_geocode <- function(DT,
     setdiff(names(formals(geocode)),
             "attempt_decode_street_abbrev")
 
-  flat_number_not_null <-
-    !missing(flat_number) && !is.null(flat_number)
-
-  if (flat_number_not_null) {
+  if (flat_number_not_null <- !missing(flat_number)) {
     old_flat_number <- as.character(substitute(flat_number))
     setnames(DT, old_flat_number, "flat_number")
   } else if ("flat_number" %notchin% names(DT)) {
@@ -163,10 +160,7 @@ add_geocode <- function(DT,
     setdiff(names(formals(geocode)),
             "attempt_decode_street_abbrev")
 
-  flat_number_not_null <-
-    !missing(flat_number) && !is.null(flat_number)
-
-  if (flat_number_not_null) {
+  if (flat_number_not_null <- !missing(flat_number)) {
     old_flat_number <- as.character(substitute(flat_number))
     setnames(DT, old_flat_number, "flat_number")
   } else if ("flat_number" %notchin% names(DT)) {
