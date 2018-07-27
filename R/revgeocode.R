@@ -28,14 +28,35 @@ revgeocode <- function(lat, lon, topn = 1) {
                LON_input = lon)) %>%
     setkeyv("LONGITUDE")
 
-  close_lats <-
-    get_fst('ADDRESS_DETAIL_ID__by__LATLON') %>%
-    .[LATITUDE %between% (range(lat) + c(-0.1, 0.1))] %>%
-    setkeyv("LATITUDE") %>%
-    latkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L]
+  max_lat <- latkey[, last(LATITUDE)]
+  min_lat <- latkey[, first(LATITUDE)]
+
+  ADDRESS_DETAIL_ID__by__LATLON <- get_fst('ADDRESS_DETAIL_ID__by__LATLON')
+
+  # Could make use of integer coordinate indexing
+  curr_dt_auto_index <- getOption("datatable.auto.index")
+  on.exit(options(datatable.auto.index = curr_dt_auto_index))
+  options(datatable.auto.index = FALSE)
+  if (between(max_lat %% 1, 0.11, 0.89) &&
+      between(min_lat %% 1, 0.11, 0.89)) {
+    the_lat_ints <- seq(as.integer(min_lat), as.integer(max_lat))
+    if (length(the_lat_ints) == 1L) {
+      close_lats <- ADDRESS_DETAIL_ID__by__LATLON[lat_int == the_lat_ints]
+    } else {
+      close_lats <- ADDRESS_DETAIL_ID__by__LATLON[lat_int %in% the_lat_ints]
+    }
+    lat_range <- c(min_lat, max_lat) + c(-0.1, 0.1)
+    close_lats <- close_lats[LATITUDE %between% lat_range]
+    setkeyv(close_lats, "LATITUDE")
+  } else {
+    close_lats <-
+      ADDRESS_DETAIL_ID__by__LATLON %>%
+      .[LATITUDE %between% (range(lat) + c(-0.1, 0.1))] %>%
+      setkeyv("LATITUDE")
+  }
 
   close_latlons <-
-    close_lats %>%
+    latkey[close_lats, roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L] %>%
     setkeyv("LONGITUDE") %>%
     lonkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L]
 
