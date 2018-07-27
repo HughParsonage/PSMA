@@ -2,11 +2,13 @@ library(data.table)
 library(magrittr)
 library(hutils)
 
+LATEST <- "~/Data/PSMA-Geocoded-Address-2018/"
+
 ADDRESS_DETAIL_PID__by__LATLON <-
   dir(pattern = "_ADDRESS_DEFAULT_GEOCODE_psv",
       recursive = TRUE,
       full.names = TRUE,
-      path = "~/Data/PSMA-Geocoded-Address-2018/") %>%
+      path = LATEST) %>%
   lapply(fread,
          na.strings = "",
          select = c("ADDRESS_DETAIL_PID",
@@ -18,7 +20,7 @@ ADDRESS_DETAIL_PID__by__LATLON <-
 
 STREET_PID_vs_ADDRESS_PID <-
   dir(pattern = "_ADDRESS_DETAIL_psv.psv$",
-      path = "~/Data/PSMA-Geocoded-Address-2017/",
+      path = LATEST,
       recursive = TRUE,
       full.names = TRUE) %>%
   lapply(fread,
@@ -64,7 +66,7 @@ STREET_PID_vs_ADDRESS_PID <-
 
 STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE <-
   dir(pattern = "_STREET_LOCALITY_psv.psv$",
-      path = "~/Data/PSMA-Geocoded-Address-2017/",
+      path = LATEST,
       recursive = TRUE,
       full.names = TRUE) %>%
   lapply(fread,
@@ -102,7 +104,8 @@ STREET_PID_vs_ADDRESS_ID <-
 STREET_ID_vs_STREET_PID <-
   STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE %>%
   .[, list(STREET_LOCALITY_INTRNL_ID = .I,
-           STREET_LOCALITY_PID)]
+           STREET_LOCALITY_PID)] %>%
+  setkey(STREET_LOCALITY_INTRNL_ID)
 
 STREET_ID_vs_ADDRESS_ID <-
   STREET_ID_vs_STREET_PID[STREET_PID_vs_ADDRESS_ID, on = "STREET_LOCALITY_PID"] %>%
@@ -135,11 +138,25 @@ fwrite(STREET_ID_vs_ADDRESS_ID, "tsv/STREET_ID_vs_ADDRESS_ID.tsv", sep = "\t")
 fwrite(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, "tsv/STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE.tsv", sep = "\t")
 
 
-devtools::use_data(ADDRESS_DETAIL_ID__by__LATLON,
-                   STREET_ID_vs_ADDRESS_ID,
-                   STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE,
-                   compress = "xz",
-                   overwrite = TRUE)
+write_dat_fst <- function(x) {
+  fst::write_fst(x, paste0("inst/extdata/", deparse(substitute(x)), ".fst"), compress = 100)
+}
+
+address2 <-
+  ADDRESS_DETAIL_ID__by__LATLON %>%
+  .[, .(ADDRESS_DETAIL_INTRNL_ID,
+        lat_int = as.integer(LATITUDE),
+        lat_rem = as.integer(10^7 * (LATITUDE - as.integer(LATITUDE))),
+        lon_int = as.integer(LONGITUDE),
+        lon_rem = as.integer(10^7 * (LONGITUDE - as.integer(LONGITUDE))))] %>%
+  setkey(ADDRESS_DETAIL_INTRNL_ID)
+
+
+
+write_dat_fst(address2)
+# write_dat_fst(ADDRESS_DETAIL_ID__by__LATLON)
+write_dat_fst(STREET_ID_vs_ADDRESS_ID)
+write_dat_fst(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE)
 
 devtools::use_data(street_type_decoder, overwrite = TRUE)
 

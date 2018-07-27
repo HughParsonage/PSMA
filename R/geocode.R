@@ -145,11 +145,55 @@ geocode <- function(flat_number = NULL,
         }
       }
 
-      if (!isAttached("PSMA")) {
-        STREET_ID_vs_ADDRESS_ID <- PSMA::STREET_ID_vs_ADDRESS_ID
-        STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <- PSMA::STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE
-        ADDRESS_DETAIL_ID__by__LATLON <- PSMA::ADDRESS_DETAIL_ID__by__LATLON
+      get_fst <- function(x) {
+        file.fst <- system.file("extdata", "STREET_ID_vs_ADDRESS_ID.fst")
+        fst::read_fst()
       }
+
+      psma_env <- getOption("PSMA_env", new.env())
+
+      STREET_ID_vs_ADDRESS_ID <-
+        if (exists("STREET_ID_vs_ADDRESS_ID", envir = psma_env)) {
+          get("STREET_ID_vs_ADDRESS_ID",
+                 envir = psma_env)
+        } else {
+          STREET_ID_vs_ADDRESS_ID <-
+            fst::read_fst(system.file("extdata", "STREET_ID_vs_ADDRESS_ID.fst",
+                                      package = "PSMA"),
+                          as.data.table = TRUE,
+                          columns = c("ADDRESS_DETAIL_INTRNL_ID",
+                                      "STREET_LOCALITY_INTRNL_ID",
+                                      "FLAT_NUMBER",
+                                      "NUMBER_FIRST",
+                                      "POSTCODE"))
+          setindexv(STREET_ID_vs_ADDRESS_ID, "POSTCODE")
+          assign("STREET_ID_vs_ADDRESS_ID",
+                 value = STREET_ID_vs_ADDRESS_ID,
+                 envir = psma_env)
+        }
+
+      STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <-
+        fst::read_fst(system.file("extdata", "STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE.fst",
+                                  package = "PSMA"),
+                      as.data.table = TRUE)
+      ADDRESS_DETAIL_ID__by__LATLON <-
+        if (file.exists(ADDRESS_DETAIL_ID__by__LATLON.fst <-
+                        system.file("extdata", "ADDRESS_DETAIL_ID__by__LATLON.fst",
+                                    package = "PSMA"))) {
+          fst::read_fst(ADDRESS_DETAIL_ID__by__LATLON.fst,
+                        as.data.table = TRUE)
+        } else {
+          address3 <- fst::read_fst(system.file("extdata", "address2.fst",
+                                    package = "PSMA"),
+                        as.data.table = TRUE)
+          address3[, LATITUDE := lat_int + lat_rem / 10^7]
+          address3[, LONGITUDE := lon_int + lon_rem / 10^7]
+          fst::write_fst(address3,
+                         path = file.path(system.file(package = "PSMA"),
+                                          "extdata",
+                                          "ADDRESS_DETAIL_ID__by__LATLON.fst"))
+          address3
+        }
 
       street_addresses_in_postcodes <-
         STREET_ID_vs_ADDRESS_ID %>%
