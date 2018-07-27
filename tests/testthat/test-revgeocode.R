@@ -13,3 +13,12 @@ test_that("Works for Random ACT location", {
   expect_equal(Grattan[["STREET_NAME"]], "MCWHAE")
   expect_equal(Grattan[["STREET_TYPE_CODE"]], "CIRCUIT")
 })
+
+test_that("Works for both", {
+  geoc <- revgeocode(c(-37.80058, -35.4), c(144.9618, 149.1), topn = 2L)
+  expect_equal(nrow(geoc), 4L)
+  expect_equal(geoc[ordering == 1L, unique(STREET_NAME)], "MALVINA")
+
+  geoc <- revgeocode(c(-35.4, -37.80058), c(149.1, 144.9618), topn = 2L)
+  expect_equal(geoc[ordering == 2L, unique(STREET_NAME)], "MALVINA")
+})

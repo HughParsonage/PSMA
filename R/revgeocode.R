@@ -18,25 +18,27 @@ revgeocode <- function(lat, lon, topn = 1) {
   LAT_input <- LON_input <- NULL
 
   latkey <-
-    setDT(list(LATITUDE = lat,
+    data.table(LATITUDE = lat,
                LAT_input = lat,
-               ordering = seq_along(lat))) %>%
-    setkeyv("LATITUDE")
+               ordering = seq_along(lat))
+  setkeyv(latkey, "LATITUDE")
 
   lonkey <-
-    setDT(list(LONGITUDE = lon,
-               LON_input = lon)) %>%
-    setkeyv("LONGITUDE")
+    data.table(LONGITUDE = lon,
+               LON_input = lon,
+               ordering = seq_along(lon))
+  setkeyv(lonkey, c("ordering", "LONGITUDE"))
 
   close_lats <-
     get_fst('ADDRESS_DETAIL_ID__by__LATLON') %>%
     .[LATITUDE %between% (range(lat) + c(-0.1, 0.1))] %>%
     setkeyv("LATITUDE") %>%
-    latkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L]
+    latkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L] %>%
+    setkeyv(c("ordering", "LONGITUDE"))
 
   close_latlons <-
     close_lats %>%
-    setkeyv("LONGITUDE") %>%
+    setkeyv(c("ordering", "LONGITUDE")) %>%
     lonkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L]
 
   distance <- NULL
@@ -45,25 +47,23 @@ revgeocode <- function(lat, lon, topn = 1) {
     close_latlons %>%
     .[complete.cases(.)] %>%
     .[, distance := haversine_distance(lat1 = LAT_input,
-                                         lon1 = LON_input,
-                                         lat2 = LATITUDE,
-                                         lon2 = LONGITUDE)]
-  setorderv(latlons_by_dist, c("ordering", "distance"))
+                                       lon1 = LON_input,
+                                       lat2 = LATITUDE,
+                                       lon2 = LONGITUDE)]
+  setkeyv(latlons_by_dist, c("ordering", "distance"))
   latlons_by_dist_top_n <-
     latlons_by_dist[, .(distance = distance[seq_len(min(.N, topn))],
                         ADDRESS_DETAIL_INTRNL_ID = ADDRESS_DETAIL_INTRNL_ID[seq_len(min(.N, topn))]),
                     keyby = "ordering"]
   street_addresses <- street_address(latlons_by_dist_top_n[["ADDRESS_DETAIL_INTRNL_ID"]])
-  cbind(data.table(distance = latlons_by_dist_top_n[["distance"]],
-                   ordering = latlons_by_dist_top_n[["ordering"]]),
-        street_addresses)
+  street_addresses[latlons_by_dist_top_n,
+                   on = c("ADDRESS_DETAIL_INTRNL_ID")] %>%
+    set_cols_first(c("ordering", "order")) %>%
+    .[]
 }
 
 street_address <- function(address_detail_pid) {
-  input <-
-    setDT(list(ADDRESS_DETAIL_INTRNL_ID = address_detail_pid)) %>%
-    .[, order := seq_len(.N)] %>%
-    setkeyv("ADDRESS_DETAIL_INTRNL_ID")
+  input <- setDT(list(ADDRESS_DETAIL_INTRNL_ID = address_detail_pid))
 
   STREET_ID_vs_ADDRESS_ID <-
     get_fst("STREET_ID_vs_ADDRESS_ID")
@@ -87,8 +87,7 @@ street_address <- function(address_detail_pid) {
                                                      on = "STREET_LOCALITY_INTRNL_ID"]
   inputs_street_addresses <-
     street_addresses[input,
-                     list(order,
-                          BUILDING_NAME,
+                     list(BUILDING_NAME,
                           LOT_NUMBER,
                           FLAT_NUMBER,
                           NUMBER_FIRST,
