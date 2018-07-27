@@ -15,15 +15,17 @@
 revgeocode <- function(lat, lon, topn = 1) {
   stopifnot(length(lat) == length(lon))
 
+  LAT_input <- LON_input <- NULL
+
   latkey <-
-    data.table(LATITUDE = lat,
+    setDT(list(LATITUDE = lat,
                LAT_input = lat,
-               ordering = seq_along(lat)) %>%
+               ordering = seq_along(lat))) %>%
     setkeyv("LATITUDE")
 
   lonkey <-
-    data.table(LONGITUDE = lon,
-               LON_input = lon) %>%
+    setDT(list(LONGITUDE = lon,
+               LON_input = lon)) %>%
     setkeyv("LONGITUDE")
 
   close_lats <-
@@ -37,17 +39,20 @@ revgeocode <- function(lat, lon, topn = 1) {
     setkeyv("LONGITUDE") %>%
     lonkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L]
 
+  distance <- NULL
+
   latlons_by_dist <-
     close_latlons %>%
     .[complete.cases(.)] %>%
     .[, distance := haversine_distance(lat1 = LAT_input,
-                                       lon1 = LON_input,
-                                       lat2 = LATITUDE,
-                                       lon2 = LONGITUDE)]
-  latlons_by_dist <- setorderv(latlons_by_dist, c("ordering", "distance"))
-  latlons_by_dist_top_n <- latlons_by_dist[, .(distance = distance[seq_len(min(.N, topn))],
-                                               ADDRESS_DETAIL_INTRNL_ID = ADDRESS_DETAIL_INTRNL_ID[seq_len(min(.N, topn))]),
-                                           keyby = "ordering"]
+                                         lon1 = LON_input,
+                                         lat2 = LATITUDE,
+                                         lon2 = LONGITUDE)]
+  setorderv(latlons_by_dist, c("ordering", "distance"))
+  latlons_by_dist_top_n <-
+    latlons_by_dist[, .(distance = distance[seq_len(min(.N, topn))],
+                        ADDRESS_DETAIL_INTRNL_ID = ADDRESS_DETAIL_INTRNL_ID[seq_len(min(.N, topn))]),
+                    keyby = "ordering"]
   street_addresses <- street_address(latlons_by_dist_top_n[["ADDRESS_DETAIL_INTRNL_ID"]])
   cbind(data.table(distance = latlons_by_dist_top_n[["distance"]],
                    ordering = latlons_by_dist_top_n[["ordering"]]),
@@ -56,7 +61,7 @@ revgeocode <- function(lat, lon, topn = 1) {
 
 street_address <- function(address_detail_pid) {
   input <-
-    data.table(ADDRESS_DETAIL_INTRNL_ID = address_detail_pid) %>%
+    setDT(list(ADDRESS_DETAIL_INTRNL_ID = address_detail_pid)) %>%
     .[, order := seq_len(.N)] %>%
     setkeyv("ADDRESS_DETAIL_INTRNL_ID")
 
