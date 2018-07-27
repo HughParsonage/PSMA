@@ -27,7 +27,7 @@ revgeocode <- function(lat, lon, topn = 1) {
     setkeyv("LONGITUDE")
 
   close_lats <-
-    ADDRESS_DETAIL_ID__by__LATLON %>%
+    get_fst('ADDRESS_DETAIL_ID__by__LATLON') %>%
     .[LATITUDE %between% (range(lat) + c(-0.1, 0.1))] %>%
     setkeyv("LATITUDE") %>%
     latkey[., roll = 0.05, rollends = c(TRUE, TRUE), nomatch=0L]
@@ -59,6 +59,12 @@ street_address <- function(address_detail_pid) {
     data.table(ADDRESS_DETAIL_INTRNL_ID = address_detail_pid) %>%
     .[, order := seq_len(.N)] %>%
     setkeyv("ADDRESS_DETAIL_INTRNL_ID")
+
+  STREET_ID_vs_ADDRESS_ID <-
+    get_fst("STREET_ID_vs_ADDRESS_ID")
+
+  STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE <-
+    get_fst("STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE")
 
   street_pid_these_address_pid <-
     STREET_ID_vs_ADDRESS_ID[input,
