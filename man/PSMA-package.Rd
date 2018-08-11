@@ -11,5 +11,10 @@ Geocoding and reverse-geocoding of Australian addresses using the PSMA data <htt
 \author{
 \strong{Maintainer}: Hugh Parsonage \email{hugh.parsonage@gmail.com}
 
+Authors:
+\itemize{
+  \item Richard Beare \email{Richard.Beare@gmail.com}
+}
+
 }
 \keyword{internal}
