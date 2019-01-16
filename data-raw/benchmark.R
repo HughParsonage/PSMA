@@ -51,6 +51,8 @@ bench_time_1 <-
                                      all_ids,
                                      close_enough = 10)
   })
+# process    real
+# 10.953s 10.945s
 
 bench_time_3 <-
   bench::system_time({
@@ -62,7 +64,7 @@ bench_time_3 <-
                                      close_enough = 3)
   })
 
-testthat::expect_lt(as.double(bench_time_1[[2]]), 120)
+testthat::expect_lt(as.double(bench_time_1[[2]]), 15)
 
 bench_time_100 <-
   bench::system_time({
@@ -70,11 +72,13 @@ bench_time_100 <-
                                      nearby_add[["LATITUDE"]],
                                      nearby_add[["LONGITUDE"]],
                                      # 1:15)
-                                     all_ids,
+                                     # all_ids,
                                      close_enough = 100)
   })
+# process    real
+# 2.016s  2.015s
 
-testthat::expect_lt(as.double(bench_time_100[[2]]), 15)
+testthat::expect_lt(as.double(bench_time_100[[2]]), 5)
 
 bench_time_25 <-
   bench::system_time({
