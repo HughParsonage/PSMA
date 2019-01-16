@@ -1,22 +1,27 @@
 Package: PSMA
 Title: Geocoding and Reverse-Geocoding of Australian Locations
-Version: 0.3.0
-Date: 2018-07-25
+Version: 0.4.0
+Date: 2019-01-16
 Authors@R: c(person("Hugh", "Parsonage", email = "hugh.parsonage@gmail.com", role = c("aut", "cre")),
              person("Richard", "Beare", role = c("aut"), email = "Richard.Beare@gmail.com"))
 Description: Geocoding and reverse-geocoding of Australian addresses using the PSMA data <https://data.gov.au/dataset/geocoded-national-address-file-g-naf>. Incorporates 'G-NAF' by PSMA Australia Limited.
 Depends: R (>= 3.4.0)
 License: GPL-3
+Remotes: hughparsonage/hutilscpp
 Imports:
   data.table,
   magrittr,
   fst,
   hutils,
+  hutilscpp,
   fastmatch
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 Suggests:
     testthat,
     tibble,
-    covr
+    covr,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

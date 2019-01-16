@@ -1,0 +1,194 @@
+---
+title: "Performant reverse geocoding"
+author: "Hugh Parsonage"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Performant reverse geocoding}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r loadPackages}
+library(scales)
+library(ggplot2)
+library(data.table)
+library(hutils)
+library(hutilscpp)
+library(fst)
+library(magrittr)
+```
+
+```{r loadPSMA}
+library(PSMA)
+```
+
+```{r psma_env}
+psma_env <- getOption("PSMA_env", new.env())
+```
+
+```{r ADDRESS_DETAIL_ID__by__LATLON}
+dt <- "ADDRESS_DETAIL_ID__by__LATLON"
+if (exists(dt, envir = psma_env)) {
+  x <- get(dt, envir = psma_env, inherits = FALSE)
+} else {
+  x <- fst::read_fst(system.file("extdata", "address2.fst",
+                                 package = "PSMA"),
+                     as.data.table = TRUE)
+  x[, "LATITUDE" := lat_int + lat_rem / 10^7]
+  x[, "LONGITUDE" := lon_int + lon_rem / 10^7]
+  assign(dt,
+         value = x,
+         envir = psma_env)
+}
+ADDRESS_DETAIL_ID__by__LATLON <- x
+```
+
+## Naively reverse geocoding is a bad idea
+
+Consider the problem of geocoding the City of Melbourne's parking spaces.
+
+```{r latlon_by_bayid}
+latlon_by_bayid <- fread(system.file("extdata", "MEL-latlon_by_bayid.tsv", package = "PSMA"))
+```
+
+There are `r comma(nrow(ADDRESS_DETAIL_ID__by__LATLON))` addresses in the PSMA data base. With
+`r nrow(latlon_by_bayid)` parking spaces to geocode, a naive cross join requires 
+`r round(nrow(ADDRESS_DETAIL_ID__by__LATLON) * as.double(nrow(latlon_by_bayid)) / 1e9, 1)` billion
+ distance calculations.
+
+The package `hutils` provides a lightweight `haversine_distance` function that only uses
+primitive functions. It's essentially as fast as it can be. Yet, if we extrapolate from the
+cost of a naive way to reverse geocode the first parking bay,
+
+```{r bench_naive_distance_cj}
+bench_naive_distance_cj <- 
+   bench::system_time({
+     haversine_distance(latlon_by_bayid$lat[1], 
+                        latlon_by_bayid$lon[1], 
+                        ADDRESS_DETAIL_ID__by__LATLON$LATITUDE,
+                        ADDRESS_DETAIL_ID__by__LATLON$LONGITUDE) %>%
+       which.min
+   })
+bench_naive_distance_cj * nrow(latlon_by_bayid)
+```
+
+we see that this is not very satisfactory. 
+
+## Trim and trim
+
+We can do better with little work.
+
+A priori, we know that these parking spots are in Melbourne. In particular,
+we know that all the possible addresses are going to be in a small, compact 
+area. So let's restrict the search to addresses within 6 minutes of a degree around 
+the parking locations. 
+
+```{r addresses_near_MEL}
+bench::system_time({
+  min_lat <- latlon_by_bayid[, min(lat)] - 0.1
+  max_lat <- latlon_by_bayid[, max(lat)] + 0.1
+  min_lon <- latlon_by_bayid[, min(lon)] - 0.1
+  max_lon <- latlon_by_bayid[, max(lon)] + 0.1♠
+  
+  addresses_near_MEL <- 
+    ADDRESS_DETAIL_ID__by__LATLON %>%
+    .[LATITUDE %between% c(min_lat, max_lat)] %>%
+    .[LONGITUDE %between% c(min_lon, max_lon)]
+})
+```
+
+```{r bench_nearby_distance_cj}
+bench_nearby_distance_cj <- 
+   bench::system_time({
+     haversine_distance(latlon_by_bayid$lat[1], 
+                        latlon_by_bayid$lon[1], 
+                        addresses_near_MEL$LATITUDE,
+                        addresses_near_MEL$LONGITUDE) %>%
+       which.min
+   })
+bench_nearby_distance_cj * nrow(latlon_by_bayid)
+```
+
+There is another potential for performance improvement that may be peculiar to the PSMA data:
+Many of the addresses have identical latitude and longitude:
+
+```{r uniqueN_latlon}
+addresses_near_MEL %>%
+  .[, lapply(.SD, round, 5)] %>%
+  .[, lapply(.SD, uniqueN), .SDcols = -1] %>%
+  .[, lapply(.SD, "/", nrow(addresses_near_MEL))] %>%
+  .[, lapply(.SD, percent)] %>%
+  kable
+```
+
+
+
+## Radix sorting?
+
+
+## R* tree?
+
+
+## Parallelize
+
+
+## GPU?
+
+
+
+Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+
+- Never uses retina figures
+- Has a smaller default figure size
+- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+
+## Vignette Info
+
+Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+
+## Styles
+
+The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+
+    output: 
+      rmarkdown::html_vignette:
+        css: mystyles.css
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+plot(1:10)
+plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))

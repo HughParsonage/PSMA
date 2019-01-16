@@ -4,7 +4,8 @@
 \alias{revgeocode}
 \title{Match Latitude-Longitude to Australian Address}
 \usage{
-revgeocode(lat, lon, topn = 1)
+revgeocode(lat, lon, id = seq_along(lat), topn = 1, l_infty_e = 0.25,
+  close_enough = "10m")
 }
 \arguments{
 \item{lat, lon}{Coordinates. Negative \code{lat} entries correspond to parallels south of the equator.}

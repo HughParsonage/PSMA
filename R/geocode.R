@@ -63,7 +63,9 @@ geocode <- function(flat_number = NULL,
                           ordering = seq_along(postcode)))
     }
   } else {
-    if (!is.null(street_type)) {
+    if (is.null(street_type)) {
+      street_name <- stop("a")
+    } else {
       flat_number_null <- is.null(flat_number)
       if (flat_number_null) {
         flat_number <-  NA_integer_
