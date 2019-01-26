@@ -20,7 +20,7 @@ LazyData: true
 RoxygenNote: 6.1.1
 Suggests:
     scales,
-    bench
+    bench,
     ggplot2,
     testthat,
     tibble,
