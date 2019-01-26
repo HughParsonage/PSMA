@@ -14,6 +14,23 @@ test_that("Works for Random ACT location", {
   expect_equal(Grattan[["STREET_TYPE_CODE"]], "CIRCUIT")
 })
 
+test_that("Works for random PMQ location", {
+  HillcrestAveHudsonAve <- revgeocode(c(-31.454144, -31.436520),
+                                      c(152.920535, 152.889133))
+
+  HillcrestAve <- HillcrestAveHudsonAve[1]
+
+  # Test ids are in order in output
+  expect_equal(HillcrestAve[["id"]], 1)
+  expect_equal(as.character(HillcrestAve[["NUMBER_FIRST"]]), "5")
+  expect_equal(HillcrestAve[["STREET_NAME"]], "HILLCREST")
+  expect_equal(HillcrestAve[["STREET_TYPE_CODE"]], "AVENUE")
+  HudsonAve <- HillcrestAveHudsonAve[2]
+  expect_equal(as.character(HudsonAve[["NUMBER_FIRST"]]), "42")
+  expect_equal(HudsonAve[["STREET_NAME"]], "HUDSON")
+  expect_equal(HudsonAve[["STREET_TYPE_CODE"]], "AVENUE")
+})
+
 test_that("Works for both", {
   skip("Implementation suspended")
   geoc <- revgeocode(c(-37.80058, -35.4), c(144.9618, 149.1), topn = 2L)

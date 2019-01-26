@@ -1,19 +1,41 @@
 #' Match Latitude-Longitude to Australian Address
 #' @param lat,lon Coordinates. Negative \code{lat} entries correspond to parallels south of the equator.
-#' @param topn How many addresses to return for each \code{lat}, \code{lon}.
+#' @param id An integer vector to identify each \code{lat,lon} coordinate. Defaults to
+#' \code{seq_along(lat)}.
+#' @param close_enough As in \code{\link[hutilscpp]{match_nrst_haversine}}.
 #' @export revgeocode
 #' @import data.table
 #' @importFrom hutilscpp match_nrst_haversine
 #' @importFrom magrittr %>%
 #' @importFrom hutils haversine_distance
 #' @importFrom hutils set_cols_first
+#' @importFrom hutils selector
 #' @importFrom hutils %notin%
 #' @importFrom fastmatch %fin%
 #' @examples
 #' revgeocode(-37.8006, 144.9618)
 #'
 #'
+#'
+#'
 revgeocode <- function(lat, lon, id = seq_along(lat),
+                       close_enough = "10m") {
+  o <-
+    revgeocode_pages(lat = lat,
+                     lon = lon,
+                     id = id,
+                     close_enough = close_enough)
+  selector(o,
+           cols = c("id",
+                    "LATITUDE", "LONGITUDE",
+                    "pos", "dist", "NUMBER_FIRST", "STREET_NAME",
+                    "STREET_TYPE_CODE", "POSTCODE", "BUILDING_NAME", "LOT_NUMBER",
+                    "FLAT_NUMBER", "ADDRESS_DETAIL_INTRNL_ID"),
+           shallow = TRUE)
+}
+
+
+.revgeocode <- function(lat, lon, id = seq_along(lat),
                        topn = 1,
                        l_infty_e = 0.25,
                        close_enough = "10m") {
@@ -50,7 +72,8 @@ revgeocode <- function(lat, lon, id = seq_along(lat),
   round_latlon <- 0
   # Determine at runtime how many digits can be rounded safely
   digs2round <- 1L
-  while (digs2round < 10L && haversine_distance(0, 0, 0, 9 * 10^{-digs2round}) > {dist0_km / 2}) {
+  while (digs2round < 10L &&
+         haversine_distance(0, 0, 0, 9 * 10^{-digs2round}) > {dist0_km / 2}) {
     digs2round <- digs2round + 1L
   }
 
@@ -61,13 +84,12 @@ revgeocode <- function(lat, lon, id = seq_along(lat),
 
   nearby_addresses <-
     get_fst('ADDRESS_DETAIL_ID__by__LATLON') %>%
+    setkey(LATITUDE, LONGITUDE) %>%
     .[LATITUDE %between% c(min_lat - l_infty_e, max_lat + l_infty_e)] %>%
     .[LONGITUDE %between% c(min_lon - l_infty_e, max_lon + l_infty_e)] %>%
 
     # I thought the following would be worth it, but only eliminates around 1%
     # .[, c("LATITUDE", "LONGITUDE") := lapply(.SD, my_trunc, digs2round)] %>%
-
-
     unique(by = c("LATITUDE", "LONGITUDE"))  ## many addresses occupy same coordinates
 
   # Had problems matching street_address output to the columns requested
@@ -77,16 +99,91 @@ revgeocode <- function(lat, lon, id = seq_along(lat),
       "BUILDING_NAME", "LOT_NUMBER", "FLAT_NUMBER",
       "ADDRESS_DETAIL_INTRNL_ID")
 
-  input[, c("ADDRESS_DETAIL_INTRNL_ID", "dist_km") := match_nrst_haversine(lat,
-                                                                           lon,
-                                                                           .subset2(nearby_addresses, "LATITUDE"),
-                                                                           .subset2(nearby_addresses, "LONGITUDE"),
-                                                                           Table = .subset2(nearby_addresses, "ADDRESS_DETAIL_INTRNL_ID"),
-                                                                           close_enough = close_enough)] %>%
-    .[, c(address_cols) := street_address(ADDRESS_DETAIL_INTRNL_ID, select = address_cols)] %>%
+  # For line length
+  s2nrby <- function(x) {
+    .subset2(nearby_addresses, x)
+  }
+
+  input[, c("add_id", "dist_km") := match_nrst_haversine(lat,
+                                                         lon,
+                                                         s2nrby("LATITUDE"),
+                                                         s2nrby("LONGITUDE"),
+                                                         Index = s2nrby("ADDRESS_DETAIL_INTRNL_ID"),
+                                                         close_enough = close_enough)] %>%
+    .[, c(address_cols) := street_address(add_id, select = address_cols)] %>%
     .[, "ordering" := id] %>%
     .[]
 }
+
+revgeocode_pages <- function(lat, lon, id = seq_along(lat),
+                             close_enough) {
+  stopifnot(length(lat) == length(lon),
+            length(lat) == length(id))
+  input <- setDT(list(id = id, LATITUDE = lat, LONGITUDE = lon))
+  hutilscpp:::cut_DT(input,
+                     d = 13L,
+                     x_range = address2_lon_range,
+                     y_range = address2_lat_range)
+
+  setkey(input,
+         xbreaks13,
+         ybreaks13)
+  # copy the breaks to keep
+  input[, "XBREAKS13" := copy(xbreaks13)]
+  input[, "YBREAKS13" := copy(ybreaks13)]
+
+  # get_fst broken up to avoid GitHub maximum
+  # size limit for the fst files
+  min_xbreaks13 <- input[, min(xbreaks13)]
+  max_xbreaks13 <- input[, max(xbreaks13)]
+  if (max_xbreaks13 < median_xbreaks13) {
+    DT0 <- get_fst("addressB13_west")
+  } else if (min_xbreaks13 > median_xbreaks13) {
+    DT0 <- get_fst("addressB13_east")
+  } else {
+    DT0 <- rbind(get_fst("addressB13_west"),
+                 get_fst("addressB13_east")[xbreaks13 != median_xbreaks13])
+  }
+
+  DT_L1_20 <- rbindlist(L1_20)
+  input_with_page <-
+    DT_L1_20[input,
+             on = c("xbreaks13_min<=XBREAKS13",
+                    "xbreaks13_max>=XBREAKS13",
+                    "ybreaks13_min<=YBREAKS13",
+                    "ybreaks13_max>=YBREAKS13"),
+             nomatch=0L]
+  setkeyv(DT0, c("xbreaks13", "ybreaks13"))
+
+  match_nrst_by <- function(lat, lon, .by1, .by2) {
+    # if (runif(1) < 0.1)
+      # cat(.by1, .by2, "\n", sep = "\t")
+    DT13 <- DT0[.(.by1, .by2)]
+    match_nrst_haversine(lat, lon,
+                         DT13[["LATITUDE"]],
+                         DT13[["LONGITUDE"]],
+                         Index = DT13[["ADDRESS_DETAIL_INTRNL_ID"]],
+                         close_enough = close_enough)
+  }
+
+
+  input_with_page[,
+                  c("pos", "dist") := match_nrst_by(LATITUDE, LONGITUDE,
+                                                    .BY[[1L]],
+                                                    .BY[[2L]]),
+                  keyby = .(xbreaks13, ybreaks13)]
+
+  address_cols <-
+    c("NUMBER_FIRST", "STREET_NAME", "STREET_TYPE_CODE", "POSTCODE",
+      "BUILDING_NAME", "LOT_NUMBER", "FLAT_NUMBER",
+      "ADDRESS_DETAIL_INTRNL_ID")
+
+  out <- input_with_page[, c(address_cols) := street_address(pos, select = address_cols)]
+  setkeyv(out, 'id')
+  out[]
+}
+
+
 #
 street_address <- function(address_detail_pid, select = NULL) {
   # Given an ADDRESS_DETAIL_INTRNL_ID, create a table

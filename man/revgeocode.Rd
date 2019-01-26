@@ -4,19 +4,23 @@
 \alias{revgeocode}
 \title{Match Latitude-Longitude to Australian Address}
 \usage{
-revgeocode(lat, lon, id = seq_along(lat), topn = 1, l_infty_e = 0.25,
-  close_enough = "10m")
+revgeocode(lat, lon, id = seq_along(lat), close_enough = "10m")
 }
 \arguments{
 \item{lat, lon}{Coordinates. Negative \code{lat} entries correspond to parallels south of the equator.}
 
-\item{topn}{How many addresses to return for each \code{lat}, \code{lon}.}
+\item{id}{An integer vector to identify each \code{lat,lon} coordinate. Defaults to
+\code{seq_along(lat)}.}
+
+\item{close_enough}{As in \code{\link[hutilscpp]{match_nrst_haversine}}.}
 }
 \description{
 Match Latitude-Longitude to Australian Address
 }
 \examples{
 revgeocode(-37.8006, 144.9618)
+
+
 
 
 }

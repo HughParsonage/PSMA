@@ -1,6 +1,7 @@
 library(data.table)
 library(magrittr)
 library(hutils)
+library(hutilscpp)
 
 LATEST <- "~/Data/PSMA-Geocoded-Address-2018/"
 
@@ -141,6 +142,9 @@ fwrite(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, "tsv/STREET_LOCALITY_ID
 write_dat_fst <- function(x) {
   fst::write_fst(x, paste0("inst/extdata/", deparse(substitute(x)), ".fst"), compress = 100)
 }
+write_dat_fst2 <- function(x) {
+  fst::write_fst(get(x), paste0("inst/extdata/", x, ".fst"), compress = 100)
+}
 
 address2 <-
   ADDRESS_DETAIL_ID__by__LATLON %>%
@@ -151,9 +155,57 @@ address2 <-
         lon_rem = as.integer(10^7 * (LONGITUDE - as.integer(LONGITUDE))))] %>%
   setkey(ADDRESS_DETAIL_INTRNL_ID)
 
+# Breaks 13
+addressB13 <-
+  ADDRESS_DETAIL_ID__by__LATLON %>%
+  unique(by = c("LATITUDE", "LONGITUDE"))
+
+lon_range <- addressB13[, range_rcpp(LONGITUDE)[1:2]]
+lat_range <- addressB13[, range_rcpp(LATITUDE)[1:2]]
+
+hutilscpp:::cut_DT(addressB13,
+                   depth = 13L,
+                   x_range = lon_range,
+                   y_range = lat_range)
+setkeyv(addressB13, c("xbreaks13", "ybreaks13"))
+stopifnot(addressB13[, last(xbreaks13)] == 8192L)
+
+# Need to break up to avoid GitHub file size limits
+# Australia is skewed...
+median_xbreaks13 <- PSMA:::median_xbreaks13
+addressB13_west <- addressB13[.(1:median_xbreaks13), on = "xbreaks13"]
+addressB13_east <- addressB13[.(median_xbreaks13:8192), on = "xbreaks13"] # overlaps
+
+
+for (i in 6:12) {
+  assign(paste0("addressB", i),
+         value = {
+           x <-
+             copy(address2) %>%
+             .[, .(ADDRESS_DETAIL_INTRNL_ID, LATITUDE, LONGITUDE)] %>%
+             unique(by = c("LATITUDE", "LONGITUDE"))
+           hutilscpp:::cut_DT(x,
+                              depth = i,
+                              x_range = lon_range,
+                              y_range = lat_range)
+           setkeyv(x, paste0(c("xbreaks", "ybreaks"), i))
+           the_L <- L1_20[[i]]
+           col_xbreak <- paste0("xbreaks", i)
+           col_ybreak <- paste0("ybreaks", i)
+
+           centre <-
+             x[the_L, on = key(x), nomatch=0L]
+         })
+}
+for (addressBs in paste0("addressB", 6:12)) {
+  write_dat_fst2(addressBs)
+}
+
 
 
 write_dat_fst(address2)
+write_dat_fst(addressB13_west)
+write_dat_fst(addressB13_east)
 # write_dat_fst(ADDRESS_DETAIL_ID__by__LATLON)
 write_dat_fst(STREET_ID_vs_ADDRESS_ID)
 write_dat_fst(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE)
