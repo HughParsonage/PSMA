@@ -41,7 +41,8 @@ if (exists(dt, envir = psma_env)) {
   x <- get(dt, envir = psma_env, inherits = FALSE)
 } else {
   x <- fst::read_fst(system.file("extdata", "address2.fst",
-                                 package = "PSMA"),
+                                 package = "PSMA",
+                                 mustWork = TRUE),
                      as.data.table = TRUE)
   x[, "LATITUDE" := lat_int + lat_rem / 10^7]
   x[, "LONGITUDE" := lon_int + lon_rem / 10^7]
@@ -97,7 +98,7 @@ bench::system_time({
   min_lat <- latlon_by_bayid[, min(lat)] - 0.1
   max_lat <- latlon_by_bayid[, max(lat)] + 0.1
   min_lon <- latlon_by_bayid[, min(lon)] - 0.1
-  max_lon <- latlon_by_bayid[, max(lon)] + 0.1♠
+  max_lon <- latlon_by_bayid[, max(lon)] + 0.1
   
   addresses_near_MEL <- 
     ADDRESS_DETAIL_ID__by__LATLON %>%
@@ -131,13 +132,117 @@ addresses_near_MEL %>%
 ```
 
 
+## Given a point in a compact set of addresses, what point in the rectangle has the largest supremum distance?
+> find the emptiest portion of the rectangle; the smallest distance to this point is the R to use 
+> in match_min_Haversine
 
-## Radix sorting?
+Idea: 
+calculate midpoint of all pairs of points, and the radius associated with each midpoint
+
+for each midpoint, find the largest radius that contains none of the original  points (nope think of a square with 3 points)
+
+```{r}
+x <- sort(runif(10))
+y <- sort(runif(10))
+```
+
+```{r ,eval=FALSE}
+N <- 200
+DT <- data.table(x = runif(N, -1, 1) + cumsum(rt(N, 2) / 5) + cumsum(rnorm(N)),
+                 y = runif(N, -1, 1) + cumsum(rt(N, 2) / 5) + cumsum(rnorm(N)))
+setkey(DT, x)
+identify_ball <- function(DT) {
+  res <- DT[, hutilscpp:::inacessibleBall(x, y, min(y), max(y))]
+  res <- as.data.table(res)
+  
+  ggplot(NULL) +
+    geom_point(data = DT, mapping = aes(x, y)) + 
+    geom_point(data = res,
+               aes(x = x_centre, y = y_centre),
+               color = "red") +
+    geom_rect(data = res,
+              aes(xmin = xmin,
+                  xmax = xmax,
+                  ymin = ymin,
+                  ymax = ymax),
+              fill = NA,
+              color = "red")
+}
+identify_ball(DT)
+```
+
+
+## Radix sorting on an L1 metric?
 
 
 ## R* tree?
 
+Construct partition:
 
+```{r }
+author_rstar_pages <- function(DT, lat, lon, shallow = FALSE, verbose = FALSE) {
+  LATITUDE <- as.character(substitute(lat))
+  LONGITUDE <- as.character(substitute(lon))
+  
+  .DT <- hutils::selector(DT,
+                          cols = c(LATITUDE,
+                                   LONGITUDE),
+                          shallow = shallow)
+  
+  as.character(Sys.time())
+  DT0 <- unique(DT0, by = c("LATITUDE", "LONGITUDE"))
+  npoints <- DT0[, .N]
+  xrange <- DT0[, range_rcpp(LONGITUDE)]
+  yrange <- DT0[, range_rcpp(LATITUDE)]
+  for (i in 1:31) {  # 2^31 maximum integer
+    if (npoints < 2^i) {
+      break
+    }
+    hutilscpp:::cut_DT(DT0,
+                       depth = i,
+                       x_range = xrange,
+                       y_range = yrange)
+  }
+  as.character(Sys.time())
+  
+  # About a minute
+  
+  Ns <- integer(length(DT0))
+  DT1 <- copy(DT0)
+  L1_20 <- lapply(1:20, function(x) data.table())
+  for (P in 1:20) {
+    cat(P, "\n")
+    cat(as.character(Sys.time()), "\n")
+    DTp <- DT1[, N := .N, keyby = c(paste0("xbreaks", P),
+                                    paste0("ybreaks", P))]
+    if (DTp[, min(N)] < 4096L) {
+      out <- DTp[N < 4096L][, .(minLATITUDE = min(LATITUDE),
+                                maxLATITUDE = max(LATITUDE),
+                                minLONGITUDE = min(LONGITUDE),
+                                maxLONGITUDE = max(LONGITUDE),
+                                theP = P,
+                                xbreaks13_min = min(xbreaks13),
+                                xbreaks13_max = max(xbreaks13),
+                                ybreaks13_min = min(ybreaks13),
+                                ybreaks13_max = max(ybreaks13)),
+                            keyby = c(paste0("xbreaks", P),
+                                      paste0("ybreaks", P))]
+      L1_20[[P]] <- out
+      DT1 <- DT1[!out, on = c(key(DTp))]
+      cat(as.character(Sys.time()), "\t", nrow(DT1), "\n")
+    } else {
+      data.table()
+    }
+    if (nrow(DT1) == 0L) {
+      break
+    }
+    
+    cat(as.character(Sys.time()), "\n\n")
+  }
+}
+```
+  
+  
 ## Parallelize
 
 
