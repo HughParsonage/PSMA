@@ -170,6 +170,26 @@ hutilscpp:::cut_DT(addressB13,
 setkeyv(addressB13, c("xbreaks13", "ybreaks13"))
 stopifnot(addressB13[, last(xbreaks13)] == 8192L)
 
+the_8192_seq_lon <- seq(lon_range[1], lon_range[2], length.out = 8092L)
+
+addressB13_ranges <-
+  addressB13[, .(lat_min = min(LATITUDE),
+                 lat_max = max(LATITUDE),
+                 lon_min = min(LONGITUDE),
+                 lon_max = max(LONGITUDE)),
+             keyby = .(xbreaks13, ybreaks13)] %>%
+  .[, all_min_lat := min(lat_min), keyby = "ybreaks13"] %>%
+  .[, all_max_lat := max(lat_max), keyby = "ybreaks13"] %>%
+  .[, all_min_lon:= min(lon_min), keyby = "xbreaks13"] %>%
+  .[, all_max_lon:= max(lon_max), keyby = "xbreaks13"] %>%
+  .[, d_lon_s := all_min_lon - shift(all_max_lon)] %>%
+  .[, d_lon_n := shift(all_min_lon, type = "lead", fill = 180) - all_max_lon] %>%
+  setkey(ybreaks13) %>%
+  .[, d_lat_e := all_min_lat - shift(all_max_lat, fill = 0)] %>%
+  .[, d_lat_w := shift(all_min_lat, type = "lead", fill = 90) - all_max_lat] %>%
+  .[]
+
+
 # Need to break up to avoid GitHub file size limits
 # Australia is skewed...
 median_xbreaks13 <- PSMA:::median_xbreaks13

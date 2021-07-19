@@ -148,4 +148,26 @@ distGeo <- function(lat1, lon1, lat2, lon2) {
   geosphere::distGeo(p1, p2)
 }
 
+plan(multiprocess)
+
+Is <- function(x, n, N) {
+  the_bins <- .bincode(seq_len(N),
+                       breaks = c(-Inf, seq.int(1, N + 1, length.out = n + 1) - 0.5),
+                       include.lowest = TRUE)
+  which(the_bins == {x + 1})
+}
+
+bench::system_time({
+  future_lapply(1:10, function(x) {
+    i <- Is(x, 10L, nrow(DT))
+    match_nrst_haversine(DT[i][["lat"]],
+                         DT[i][["lon"]],
+                         nearby_add[["LATITUDE"]],
+                         nearby_add[["LONGITUDE"]],
+                         all_ids,
+                         close_enough = 10)
+  })
+})
+
+
 

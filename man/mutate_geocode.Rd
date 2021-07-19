@@ -5,9 +5,17 @@
 \alias{add_geocode}
 \title{Add latitude and longitude columns to a data frame of addresses}
 \usage{
-mutate_geocode(DT, flat_number = NULL, number_first = NULL,
-  building_name = NULL, street_name = NULL, street_type = NULL,
-  postcode = NULL, new_names = c("lat", "lon"), overwrite = FALSE)
+mutate_geocode(
+  DT,
+  flat_number = NULL,
+  number_first = NULL,
+  building_name = NULL,
+  street_name = NULL,
+  street_type = NULL,
+  postcode = NULL,
+  new_names = c("lat", "lon"),
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{DT}{A \code{data.frame} to which columns will be added.}

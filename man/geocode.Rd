@@ -4,9 +4,15 @@
 \alias{geocode}
 \title{Geocode address}
 \usage{
-geocode(flat_number = NULL, number_first = NULL,
-  building_name = NULL, street_name = NULL, street_type = NULL,
-  postcode, attempt_decode_street_abbrev = FALSE)
+geocode(
+  flat_number = NULL,
+  number_first = NULL,
+  building_name = NULL,
+  street_name = NULL,
+  street_type = NULL,
+  postcode,
+  attempt_decode_street_abbrev = FALSE
+)
 }
 \arguments{
 \item{flat_number, number_first, street_name, street_type, postcode}{The address to be geocoded. Argument \code{postcode} is mandatory.}

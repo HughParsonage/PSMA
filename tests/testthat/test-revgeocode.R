@@ -31,6 +31,15 @@ test_that("Works for random PMQ location", {
   expect_equal(HudsonAve[["STREET_TYPE_CODE"]], "AVENUE")
 })
 
+test_that("For places across the country", {
+  library(data.table)
+  WA_location <- c(-31.993641, 116.067912) # 14 Anne Avenue
+  HillcrestAveHudsonAve_WA <- revgeocode(c(-31.454144, -31.436520, -31.993641),
+                                      c(152.920535, 152.889133, 116.067912))
+  expect_equal(HillcrestAveHudsonAve_WA[, last(paste(NUMBER_FIRST, STREET_NAME, STREET_TYPE_CODE, POSTCODE))],
+               "14 ANNE AVENUE 6076")
+})
+
 test_that("Works for both", {
   skip("Implementation suspended")
   geoc <- revgeocode(c(-37.80058, -35.4), c(144.9618, 149.1), topn = 2L)

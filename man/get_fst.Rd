@@ -4,10 +4,12 @@
 \alias{get_fst}
 \title{Get data from fst extdata}
 \usage{
-get_fst(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
-  "STREET_ID_vs_ADDRESS_ID",
-  "STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE", "addressB13_west",
-  "addressB13_east"), cache_env = TRUE)
+get_fst(
+  dt = c("ADDRESS_DETAIL_ID__by__LATLON", "STREET_ID_vs_ADDRESS_ID",
+    "STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE", "addressB13_west",
+    "addressB13_east"),
+  cache_env = TRUE
+)
 }
 \arguments{
 \item{dt}{A string, the \code{data.table} to retrieve.}

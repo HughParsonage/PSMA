@@ -43,12 +43,12 @@ revgeocode <- function(lat, lon, id = seq_along(lat),
     message("`topn` has been disabled.")
     topn <- 1L
   }
-  input <- data.table(lat, lon, id)
+
   min_lat <- min(lat)
   min_lon <- min(lon)
   max_lat <- max(lat)
   max_lon <- max(lon)
-
+  input <- data.table(lat, lon, id)
 
   stopifnot(length(close_enough) == 1L)
 
