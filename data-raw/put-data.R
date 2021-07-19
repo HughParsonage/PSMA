@@ -2,8 +2,13 @@ library(data.table)
 library(magrittr)
 library(hutils)
 library(hutilscpp)
+library(default)
+load("R/sysdata.rda")
 
-LATEST <- "~/Data/PSMA-Geocoded-Address-2018/"
+default(fread) <- list(showProgress = FALSE)
+
+LATEST <- normalizePath("~/Data/PSMA-Geocoded-Address-202105/",
+                        winslash = "/")
 
 ADDRESS_DETAIL_PID__by__LATLON <-
   dir(pattern = "_ADDRESS_DEFAULT_GEOCODE_psv",
@@ -148,7 +153,7 @@ write_dat_fst2 <- function(x) {
 
 address2 <-
   ADDRESS_DETAIL_ID__by__LATLON %>%
-  .[, .(ADDRESS_DETAIL_INTRNL_ID,
+  .[, .(ADDRESS_DETAIL_INTRNL_ID, LATITUDE, LONGITUDE,
         lat_int = as.integer(LATITUDE),
         lat_rem = as.integer(10^7 * (LATITUDE - as.integer(LATITUDE))),
         lon_int = as.integer(LONGITUDE),
@@ -160,8 +165,8 @@ addressB13 <-
   ADDRESS_DETAIL_ID__by__LATLON %>%
   unique(by = c("LATITUDE", "LONGITUDE"))
 
-lon_range <- addressB13[, range_rcpp(LONGITUDE)[1:2]]
-lat_range <- addressB13[, range_rcpp(LATITUDE)[1:2]]
+lon_range <- addressB13[, minmax(LONGITUDE)]
+lat_range <- addressB13[, minmax(LATITUDE)]
 
 hutilscpp:::cut_DT(addressB13,
                    depth = 13L,
@@ -221,8 +226,7 @@ for (addressBs in paste0("addressB", 6:12)) {
   write_dat_fst2(addressBs)
 }
 
-
-
+address2[, c("LATITUDE", "LONGITUDE") := NULL]
 write_dat_fst(address2)
 write_dat_fst(addressB13_west)
 write_dat_fst(addressB13_east)
@@ -230,5 +234,5 @@ write_dat_fst(addressB13_east)
 write_dat_fst(STREET_ID_vs_ADDRESS_ID)
 write_dat_fst(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE)
 
-devtools::use_data(street_type_decoder, overwrite = TRUE)
+usethis::use_data(street_type_decoder, overwrite = TRUE)
 

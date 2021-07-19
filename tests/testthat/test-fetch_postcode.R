@@ -16,7 +16,9 @@ test_that("Random samples match the geocode", {
                          street_type = STREET_TYPE_CODE,
                          postcode = POSTCODE)
   )
-  expect_equal(coordinates$LATITUDE, three.per.postcode$LATITUDE)
-  expect_equal(coordinates$LONGITUDE, three.per.postcode$LONGITUDE)
+  d_lat <- coordinates$LATITUDE - three.per.postcode$LATITUDE
+  d_lon <- coordinates$LONGITUDE - three.per.postcode$LONGITUDE
+  expect_lte(max(abs(d_lat), na.rm = TRUE), 0.001)
+  expect_lte(max(abs(d_lon), na.rm = TRUE), 0.001)
 
 })

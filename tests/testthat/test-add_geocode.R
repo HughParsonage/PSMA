@@ -42,7 +42,7 @@ test_that("tibbles", {
                                street_name = "George",
                                street_type = "Street",
                                postcode = 2000L))
-  expect_true(tibble::is.tibble(out))
+  expect_true(tibble::is_tibble(out))
   expect_true("latitude" %in% names(out))
   expect_true("longitude" %in% names(out))
   expect_gt(out$latitude[1L], -34)

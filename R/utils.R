@@ -9,7 +9,7 @@ isAttached <- function(pkg) {
   }
 }
 
-utils2km <- function(string) {
+dist2km <- function(string) {
   stopifnot(is.character(string),
             length(string) == 1L)
   # put km before m!

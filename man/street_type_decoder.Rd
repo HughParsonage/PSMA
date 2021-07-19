@@ -4,11 +4,13 @@
 \name{street_type_decoder}
 \alias{street_type_decoder}
 \title{Street type decoder}
-\format{A \code{data.table} of \code{48} rows and \code{2} columns
+\format{
+A \code{data.table} of \code{48} rows and \code{2} columns
 \describe{
 \item{\code{street_abbrev}}{A possible abbreviation}
 \item{\code{street_type}}{The standardized/full name}
-}}
+}
+}
 \usage{
 street_type_decoder
 }
