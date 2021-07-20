@@ -234,5 +234,90 @@ write_dat_fst(addressB13_east)
 write_dat_fst(STREET_ID_vs_ADDRESS_ID)
 write_dat_fst(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE)
 
+find_data_with_noms <- function(noms, just_act = TRUE) {
+  all_files.psv <- dir(LATEST,
+                       pattern = "\\.psv$",
+                       full.names = TRUE,
+                       recursive = TRUE)
+  have_noms <-
+    sapply(all_files.psv,
+           function(file.psv) {
+             if (just_act && !grepl("ACT", file.psv)) {
+               return(FALSE)
+             }
+             all(noms %chin% names(fread(file = file.psv, nrows = 0, sep = "|")))
+           })
+  all_files.psv[have_noms]
+}
+
+rbindfiles <- function(files.psv, ste = TRUE,
+                       showProgress = FALSE,
+                       sep = "|",
+                       na.strings = c("", "NA"),
+                       select = NULL) {
+  L <- lapply(files.psv,
+              fread,
+              showProgress = showProgress,
+              sep = "|",
+              na.strings = na.strings,
+              select = select)
+  names(L) <- trim_common_affixes(files.psv)
+  if (ste) {
+    rbindlist(L, use.names = TRUE, idcol = "STE")
+  } else {
+    rbindlist(L, use.names = TRUE)
+  }
+}
+
+LOCALITY_vs_LOCALITY_PID <-
+  find_data_with_noms(c("LOCALITY_PID", "NAME"), just_act = FALSE) %>%
+  rbindfiles
+
+write_dat_fst(LOCALITY_vs_LOCALITY_PID)
+
+LOCALITY_VS_POSTCODE <-
+  dir(LATEST, pattern = "ADDRESS_DETAIL_psv", recursive = TRUE,
+      full.names = TRUE) %>%
+  lapply(function(file.psv) {
+    fread(file = file.psv,
+          showProgress = FALSE,
+          sep = "|",
+          na.strings = c("", "NA"),
+          select = c("ADDRESS_DETAIL_PID",
+                     "LOCALITY_PID", "POSTCODE"))
+  }) %>%
+  setNames(trim_common_affixes(
+    dir(LATEST, pattern = "ADDRESS_DETAIL_psv", recursive = TRUE,
+        full.names = TRUE))) %>%
+  rbindlist(use.names = TRUE,
+            idcol = "STE") %>%
+  .[, .N, keyby = .(STE, LOCALITY_PID, POSTCODE)]
+
+write_dat_fst(LOCALITY_VS_POSTCODE)
+
+STREET_NAMES_BY_ID <-
+  dir(LATEST, pattern = "STREET_LOCALITY_psv\\.psv$", recursive = TRUE,
+      full.names = TRUE) %>%
+  lapply(function(file.psv) {
+    fread(file = file.psv,
+          showProgress = FALSE,
+          sep = "|",
+          na.strings = c("", "NA"),
+          select = c("STREET_LOCALITY_PID",
+                     "LOCALITY_PID",
+                     "STREET_NAME",
+                     "STREET_TYPE_CODE"))
+  }) %>%
+  rbindlist(use.names = TRUE, fill = TRUE)
+
+STREET_BY_POSTCODE <-
+  STREET_NAMES_BY_ID[LOCALITY_VS_POSTCODE, on = "LOCALITY_PID", nomatch = 0L] %>%
+  .[, .(STREET_NAME, STREET_TYPE_CODE, POSTCODE)] %>%
+  unique %>%
+  setkey(POSTCODE, STREET_NAME) %>%
+  .[]
+
+write_dat_fst(STREET_BY_POSTCODE)
+
 usethis::use_data(street_type_decoder, overwrite = TRUE)
 
