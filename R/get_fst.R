@@ -8,6 +8,8 @@
 #' in \code{extdata}. If the \code{\link{PSMA_env}} contains \code{dt}
 #' it is returned; if not, it is retrieved from the \code{fst} file, then
 #' assigned.
+#'
+#' @export
 
 get_fst <- function(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
                            "STREET_ID_vs_ADDRESS_ID",
@@ -15,7 +17,7 @@ get_fst <- function(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
                            "addressB13_west",
                            "addressB13_east"),
                     cache_env = TRUE) {
-  dt <- match.arg(dt)
+  dt <- dt[1]
   psma_env <- getOption("PSMA_env", new.env())
 
   if (exists(dt, envir = psma_env) && cache_env) {
