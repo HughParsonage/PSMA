@@ -7,7 +7,13 @@
 update_data(path = NULL)
 }
 \arguments{
-\item{path}{Directory of unzipped folder of the `GNAF` unzipped folder.}
+\item{path}{Directory of unzipped folder of the `GNAF` unzipped folder. If
+\code{NULL}, the default, an attempt will be made to infer the latest PSMA
+url and unzipped in a temporary directory.}
+}
+\value{
+Called for its side-effect. When called, data from `path` are incorporated
+into the PSMA package folder.
 }
 \description{
 Update data
