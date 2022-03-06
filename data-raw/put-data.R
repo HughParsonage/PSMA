@@ -82,7 +82,7 @@ STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE <-
                     "STREET_TYPE_CODE")) %>%
   rbindlist(use.names = TRUE, fill = TRUE) %>%
   # Some unnamed streets
-  .[complete.cases(.)]
+  .[]
 
 
 # Reduce the size of lookup tables by converting
