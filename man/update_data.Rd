@@ -4,7 +4,7 @@
 \alias{update_data}
 \title{Update data}
 \usage{
-update_data(path = NULL)
+update_data(path = NULL, just_tsv = FALSE)
 }
 \arguments{
 \item{path}{Directory of unzipped folder of the `GNAF` unzipped folder. If

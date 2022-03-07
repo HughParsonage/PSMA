@@ -4,19 +4,22 @@
 #' \code{NULL}, the default, an attempt will be made to infer the latest PSMA
 #' url and unzipped in a temporary directory.
 #'
+#' @param just_tsv \code{bool}. If \code{TRUE}, only the .tsv files are produced.
+#' This is intended to be useful only for this package's development.
+#'
 #' @return
 #' Called for its side-effect. When called, data from `path` are incorporated
 #' into the PSMA package folder.
 #'
 #' @export
 
-update_data <- function(path = NULL) {
+update_data <- function(path = NULL, just_tsv = FALSE) {
   if (is.null(path)) {
     return(update_data_auto())
   }
   stopifnot(is.character(path), length(path) == 1, dir.exists(path),
             length(grep("\\.psv$", dir(path = path, recursive = TRUE))) >= 8)
-  .latest2fst(path)
+  .latest2fst(path, just_tsv = just_tsv)
 }
 
 update_data_auto <- function() {
@@ -34,7 +37,7 @@ update_data_auto <- function() {
   update_data(new_dir)
 }
 
-.latest2fst <- function(LATEST, progress = 2L) {
+.latest2fst <- function(LATEST, progress = 2L, just_tsv = FALSE) {
   cat <- function(...) {
     base::cat(format(Sys.time(), "%H:%M"), ...)
   }
@@ -182,6 +185,10 @@ update_data_auto <- function() {
     fwrite(ADDRESS_DETAIL_ID__by__LATLON, "tsv/ADDRESS_DETAIL_ID__by__LATLON.tsv", sep = "\t")
     fwrite(STREET_ID_vs_ADDRESS_ID, "tsv/STREET_ID_vs_ADDRESS_ID.tsv", sep = "\t")
     fwrite(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, "tsv/STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE.tsv", sep = "\t")
+    if (just_tsv) {
+      return(invisible(NULL))
+    }
+
   }
 
 
