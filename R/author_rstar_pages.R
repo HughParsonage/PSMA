@@ -1,6 +1,7 @@
 
 
 author_rstar_pages <- function(DT, lat, lon, shallow = FALSE, quiet = FALSE) {
+  xbreaks13 <- ybreaks13 <- NULL
   if (quiet) {
     cat <- function(...) invisible()
   }
@@ -23,10 +24,10 @@ author_rstar_pages <- function(DT, lat, lon, shallow = FALSE, quiet = FALSE) {
       break
     }
     cat("depth" = idepth)
-    hutilscpp:::cut_DT(DT0,
-                       depth = idepth,
-                       x_range = xrange,
-                       y_range = yrange)
+    ..cut_DT(DT0,
+             depth = idepth,
+             x_range = xrange,
+             y_range = yrange)
   }
   # Issue: what if the nearest neighbnour of a point in a page
   # is *outside* that page?
@@ -35,6 +36,8 @@ author_rstar_pages <- function(DT, lat, lon, shallow = FALSE, quiet = FALSE) {
 
   XenoPages <-
     lapply(1:13, function(level) {
+      minLAT <- maxLAT <- minLON <- maxLON <- NULL
+      rangeLAT <- I <- NULL
       o <-
         DT0[,
             .(minLAT = min(LATITUDE),
@@ -50,11 +53,11 @@ author_rstar_pages <- function(DT, lat, lon, shallow = FALSE, quiet = FALSE) {
         DT0[, .(rangeLAT = range_rcpp(LATITUDE)[1:2]),
             keyby = c(paste0("ybreaks", level))] %>%
         .[, I := .I] %>%
-        .[, d_lat := rangeLAT - shift(rangeLAT)] %>%
+        .[, "d_lat" := rangeLAT - shift(rangeLAT)] %>%
         .[I %% 2L == 1L]
-      o_ranges[, d_lat := rangeLAT - shift(rangeLAT)][]
-      o[, d_lon := minLON - shift(maxLON)]
-      o[, d_lat := minLAT - shift(maxLAT)]
+      o_ranges[, "d_lat" := rangeLAT - shift(rangeLAT)][]
+      o[, "d_lon" := minLON - shift(maxLON)]
+      o[, "d_lat" := minLAT - shift(maxLAT)]
 
     })
 
@@ -67,6 +70,7 @@ author_rstar_pages <- function(DT, lat, lon, shallow = FALSE, quiet = FALSE) {
   for (P in 1:20) {
     cat(P, "\n")
     cat(as.character(Sys.time()), "\n")
+    N <- NULL
     DTp <- DT1[, N := .N, keyby = c(paste0("xbreaks", P),
                                     paste0("ybreaks", P))]
     if (DTp[, min(N)] < 4096L) {

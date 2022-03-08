@@ -10,6 +10,9 @@ update_data(path = NULL, just_tsv = FALSE)
 \item{path}{Directory of unzipped folder of the `GNAF` unzipped folder. If
 \code{NULL}, the default, an attempt will be made to infer the latest PSMA
 url and unzipped in a temporary directory.}
+
+\item{just_tsv}{\code{bool}. If \code{TRUE}, only the .tsv files are produced.
+This is intended to be useful only for this package's development.}
 }
 \value{
 Called for its side-effect. When called, data from `path` are incorporated

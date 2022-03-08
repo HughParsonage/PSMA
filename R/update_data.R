@@ -42,6 +42,8 @@ update_data_auto <- function() {
     base::cat(format(Sys.time(), "%H:%M"), ...)
   }
 
+  ADDRESS_DETAIL_PID <- LATITUDE <- LONGITUDE <- NULL
+
   ADDRESS_DETAIL_PID__by__LATLON <-
     dir(pattern = "_ADDRESS_DEFAULT_GEOCODE_psv",
         recursive = TRUE,
@@ -110,6 +112,7 @@ update_data_auto <- function() {
   if (progress) {
     cat("STREET_PID_vs_ADDRESS_PID created.\n")
   }
+  STREET_LOCALITY_PID <- STREET_NAME <- STREET_TYPE_CODE <- NULL
 
   STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE <-
     dir(pattern = "_STREET_LOCALITY_psv.psv$",
@@ -129,6 +132,8 @@ update_data_auto <- function() {
   if (progress) {
     cat("STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE created.\n")
   }
+
+  ADDRESS_DETAIL_INTRNL_ID <- NULL
 
   # Reduce the size of lookup tables by converting
   # character columns to ints
@@ -151,6 +156,8 @@ update_data_auto <- function() {
     set_cols_first("ADDRESS_DETAIL_INTRNL_ID") %>%
     setkeyv("ADDRESS_DETAIL_INTRNL_ID") %>%
     .[]
+
+  STREET_LOCALITY_INTRNL_ID <- NULL
 
   STREET_ID_vs_STREET_PID <-
     STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE %>%
@@ -213,6 +220,8 @@ update_data_auto <- function() {
     fst::write_fst(get(x), b.fst, compress = 100)
   }
 
+  lat_int <- lat_rem <- lon_int <- lon_rem <- NULL
+
   address2 <-
     ADDRESS_DETAIL_ID__by__LATLON %>%
     .[, .(ADDRESS_DETAIL_INTRNL_ID, LATITUDE, LONGITUDE,
@@ -230,6 +239,8 @@ update_data_auto <- function() {
   lon_range <- addressB13[, minmax(LONGITUDE)]
   lat_range <- addressB13[, minmax(LATITUDE)]
 
+  xbreaks13 <- ybreaks13 <- NULL
+
   ..cut_DT(addressB13,
            depth = 13L,
            x_range = lon_range,
@@ -238,6 +249,19 @@ update_data_auto <- function() {
   stopifnot(addressB13[, last(xbreaks13)] == 8192L)
 
   the_8192_seq_lon <- seq(lon_range[1], lon_range[2], length.out = 8092L)
+
+  all_min_lat <-
+    all_max_lat <-
+    all_min_lon <-
+    all_max_lon <-
+    lat_min <-
+    lat_max <-
+    lon_min <-
+    lon_max <-
+    d_lon_s <-
+    d_lon_n <-
+    d_lat_e <-
+    d_lat_w <- NULL
 
   addressB13_ranges <-
     addressB13[, .(lat_min = min(LATITUDE),
@@ -259,7 +283,7 @@ update_data_auto <- function() {
 
   # Need to break up to avoid GitHub file size limits
   # Australia is skewed...
-  median_xbreaks13 <- PSMA:::median_xbreaks13
+  median_xbreaks13 <- copy(median_xbreaks13)
   addressB13_west <- addressB13[.(1:median_xbreaks13), on = "xbreaks13"]
   addressB13_east <- addressB13[.(median_xbreaks13:8192), on = "xbreaks13"] # overlaps
 
@@ -359,7 +383,7 @@ update_data_auto <- function() {
           full.names = TRUE))) %>%
     rbindlist(use.names = TRUE,
               idcol = "STE") %>%
-    .[, .N, keyby = .(STE, LOCALITY_PID, POSTCODE)]
+    .[, .N, keyby = c("STE", "LOCALITY_PID", "POSTCODE")]
 
   write_dat_fst(LOCALITY_VS_POSTCODE)
 
