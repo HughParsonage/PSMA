@@ -103,6 +103,7 @@ revgeocode <- function(lat, lon, id = seq_along(lat),
   s2nrby <- function(x) {
     .subset2(nearby_addresses, x)
   }
+  add_id <- dist_km <- NULL
 
   input[, c("add_id", "dist_km") := match_nrst_haversine(lat,
                                                          lon,
@@ -117,13 +118,14 @@ revgeocode <- function(lat, lon, id = seq_along(lat),
 
 revgeocode_pages <- function(lat, lon, id = seq_along(lat),
                              close_enough) {
+  xbreaks13 <- ybreaks13 <- NULL
   stopifnot(length(lat) == length(lon),
             length(lat) == length(id))
   input <- setDT(list(id = id, LATITUDE = lat, LONGITUDE = lon))
-  hutilscpp:::cut_DT(input,
-                     d = 13L,
-                     x_range = address2_lon_range,
-                     y_range = address2_lat_range)
+  ..cut_DT(input,
+           depth = 13L,
+           x_range = address2_lon_range,
+           y_range = address2_lat_range)
 
   setkey(input,
          xbreaks13,
@@ -166,7 +168,7 @@ revgeocode_pages <- function(lat, lon, id = seq_along(lat),
                          close_enough = close_enough)
   }
 
-
+  pos <- NULL
   input_with_page[,
                   c("pos", "dist") := match_nrst_by(LATITUDE, LONGITUDE,
                                                     .BY[[1L]],

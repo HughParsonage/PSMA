@@ -39,3 +39,15 @@ test_that("Inexact street number results in nearby address", {
 
 })
 
+test_that("2022 Feb", {
+  constable_st <-
+    geocode(number_first = 16L,
+            street_name = "CONSTABLE",
+            street_type = "STREET",
+            postcode = 2611L)
+  lat <- round(constable_st$LATITUDE, 4)
+  lon <- round(constable_st$LONGITUDE, 3)
+  expect_equal(lat, -35.2715)
+  expect_equal(lon, 149.049)
+})
+
