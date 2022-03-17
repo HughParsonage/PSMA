@@ -23,7 +23,6 @@ update_data <- function(path = NULL, just_tsv = FALSE) {
 }
 
 update_data_auto <- function() {
-  url <- readLines("https://raw.githubusercontent.com/HughParsonage/PSMA/10-create-updater/data-raw/LATEST_PSMA_URL_ZIP")
   url <- readLines("https://raw.githubusercontent.com/HughParsonage/PSMA/master/data-raw/LATEST_PSMA_URL_ZIP")
   tempf.zip <- tempfile(fileext = ".zip")
   status <- download.file(url, destfile = tempf.zip, mode = "wb")
