@@ -11,7 +11,8 @@ geocode(
   street_name = NULL,
   street_type = NULL,
   postcode,
-  attempt_decode_street_abbrev = FALSE
+  attempt_decode_street_abbrev = FALSE,
+  approx = 0L
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ geocode(
 \code{postcode}}
 
 \item{attempt_decode_street_abbrev}{Should abbreviated street types be decoded during the geocoding attempt?}
+
+\item{approx}{\code{integer(1)} If \code{0}, only exact matches are made. If \code{1L}, interpolation is allowed.
+Other values may be allowed}
 }
 \value{
 A \code{data.table} of three columns and the same number of rows as the longest argument.

@@ -4,6 +4,7 @@
 #' @param flat_number,number_first,building_name,street_name,street_type,postcode Columns quoted or unquoted to be passed to \code{\link{geocode}}. If \code{NULL}, \code{DT} must the columns spelled the same as the arguments here.
 #' @param new_names Character vector of length-2 specifying the new names in the resulting \code{data.frame} for the latitude and longitude respectively.
 #' @param overwrite If \code{new_names} are present in \code{DT}, should they be overwritten?
+#' @param approx See \code{\link{geocode}}.
 #' @export mutate_geocode add_geocode
 #'
 
@@ -15,6 +16,7 @@ mutate_geocode <- function(DT,
                            street_type = NULL,
                            postcode = NULL,
                            new_names = c("lat", "lon"),
+                           approx = 0L,
                            overwrite = FALSE) {
   dt_was_tibble <- FALSE
   if (!is.data.table(DT)) {
@@ -29,8 +31,9 @@ mutate_geocode <- function(DT,
   }
 
   names_formals <-
-    setdiff(names(formals(geocode)),
-            "attempt_decode_street_abbrev")
+    names_formals <-
+    c("flat_number", "number_first", "building_name", "street_name",
+      "street_type", "postcode")
 
   if (flat_number_not_null <- !missing(flat_number)) {
     old_flat_number <- as.character(substitute(flat_number))
@@ -104,7 +107,8 @@ mutate_geocode <- function(DT,
                               building_name = building_name,
                               street_name = street_name,
                               street_type = street_type,
-                              postcode = postcode)[, "ordering" := NULL]]
+                              postcode = postcode,
+                              approx = approx)[, "ordering" := NULL]]
 
   resetnames <- function(DT, a, b) {
     setnames(DT, b, a)
@@ -143,6 +147,7 @@ add_geocode <- function(DT,
                         street_type = NULL,
                         postcode = NULL,
                         new_names = c("latitude", "longitude"),
+                        approx = 0L,
                         overwrite = FALSE) {
   dt_was_tibble <- FALSE
   if (!is.data.table(DT)) {
@@ -157,8 +162,8 @@ add_geocode <- function(DT,
   }
 
   names_formals <-
-    setdiff(names(formals(geocode)),
-            "attempt_decode_street_abbrev")
+    c("flat_number", "number_first", "building_name", "street_name",
+      "street_type", "postcode")
 
   if (flat_number_not_null <- !missing(flat_number)) {
     old_flat_number <- as.character(substitute(flat_number))
@@ -232,7 +237,8 @@ add_geocode <- function(DT,
                               building_name = building_name,
                               street_name = street_name,
                               street_type = street_type,
-                              postcode = postcode)[, "ordering" := NULL]]
+                              postcode = postcode,
+                              approx = approx)[, "ordering" := NULL]]
 
   resetnames <- function(DT, a, b) {
     setnames(DT, b, a)

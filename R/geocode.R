@@ -3,6 +3,10 @@
 #' @param building_name If \code{street_name} is not provided, searches for building names in that
 #' \code{postcode}
 #' @param attempt_decode_street_abbrev Should abbreviated street types be decoded during the geocoding attempt?
+#' @param approx \code{integer(1)} If \code{0}, only exact matches are made. If \code{1L}, interpolation is allowed.
+#' Other values may be allowed
+#'
+#'
 #' @examples
 #' geocode(flat_number = NA_character_,
 #'         number_first = 8L,
@@ -31,7 +35,8 @@ geocode <- function(flat_number = NULL,
                     street_name = NULL,
                     street_type = NULL,
                     postcode,
-                    attempt_decode_street_abbrev = FALSE) {
+                    attempt_decode_street_abbrev = FALSE,
+                    approx = 0L) {
 
   # Put here so the subsequent tryCatch doesn't
   # look confusing.
@@ -187,20 +192,42 @@ geocode <- function(flat_number = NULL,
                   "STREET_TYPE_CODE",
                   "NUMBER_FIRST"))
 
+
       addresses_by_ADDRESS_DETAIL_INTRNL_ID <-
-        street_addresses_in_postcodes[input,
-                                      on = c("POSTCODE",
-                                             "STREET_NAME",
-                                             "STREET_TYPE_CODE",
-                                             "NUMBER_FIRST",
-                                             "FLAT_NUMBER"),
-                                      nomatch=0L,
-                                      roll="nearest",
-                                      # If multiple places match, must return
-                                      # only one. TODO : flat_number
-                                      mult='first'] %>%
-        setkeyv("ADDRESS_DETAIL_INTRNL_ID") %>%
-        .[input, on = "ordering", mult='first']
+        if (approx == 0L) {
+          street_addresses_in_postcodes[input,
+                                        on = c("POSTCODE",
+                                               "STREET_NAME",
+                                               "STREET_TYPE_CODE",
+                                               "NUMBER_FIRST",
+                                               "FLAT_NUMBER"),
+                                        nomatch=0L,
+                                        roll="nearest",
+                                        # If multiple places match, must return
+                                        # only one. TODO : flat_number
+                                        mult='first'] %>%
+            setkeyv("ADDRESS_DETAIL_INTRNL_ID") %>%
+            .[input, on = "ordering", mult='first']
+        } else {
+          switch(approx,
+                 {
+                   addresses_by_ADDRESS_DETAIL_INTRNL_ID <-
+                     street_addresses_in_postcodes[input,
+                                                   on = c("POSTCODE",
+                                                          "STREET_NAME",
+                                                          "STREET_TYPE_CODE",
+                                                          "NUMBER_FIRST"),
+                                                   roll="nearest"] %>%
+                     setkeyv("ADDRESS_DETAIL_INTRNL_ID") %>%
+                     .[input, on = "ordering", mult='first']
+
+                 },
+                 {
+                   # input[street_addresses_in_postcodes,
+                   #       c("avg_lat", )]
+                 },
+                 stop("Not yet supported"))
+        }
 
       out <- ADDRESS_DETAIL_ID__by__LATLON[addresses_by_ADDRESS_DETAIL_INTRNL_ID,
                                            list(ordering, LATITUDE, LONGITUDE),
@@ -213,5 +240,37 @@ geocode <- function(flat_number = NULL,
   out[]
 }
 
+get_AddressColumnsWithLatLon <- function() {
+  .Assign("AddressColumnsWithLatLon",
+          {
+            STREET_ID_vs_ADDRESS_ID <-
+              get_fst("STREET_ID_vs_ADDRESS_ID")
+
+            STREET_etc <-
+              get_fst("STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE")
+
+            ADDRESS_DETAIL_ID__by__LATLON <-
+              get_fst("ADDRESS_DETAIL_ID__by__LATLON")
+
+            out <-
+              cbind(selector(STREET_ID_vs_ADDRESS_ID,
+                             cols = c("STREET_LOCALITY_INTRNL_ID",
+                                      "LOT_NUMBER",
+                                      "FLAT_NUMBER",
+                                      "NUMBER_FIRST",
+                                      "POSTCODE")),
+                    selector(ADDRESS_DETAIL_ID__by__LATLON,
+                             cols = c("ADDRESS_DETAIL_INTRNL_ID", "LATITUDE", "LONGITUDE")))
+            i.STREET_NAME <- i.STREET_TYPE_CODE <- NULL
+            out[STREET_etc,
+                c("STREET_NAME", "STREET_TYPE_CODE") := list(i.STREET_NAME, i.STREET_TYPE_CODE),
+                on = "STREET_LOCALITY_INTRNL_ID "]
+          })
+}
+
+# permit interpolation
+geocode2 <- function(input) {
+
+}
 
 

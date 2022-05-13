@@ -20,11 +20,12 @@ get_fst <- function(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
   dt <- dt[1]
   psma_env <- getOption("PSMA_env", new.env())
 
-  if (exists(dt, envir = psma_env) && cache_env) {
+  if (exists(dt, envir = psma_env, inherits = FALSE) && cache_env) {
     x <- get(dt, envir = psma_env, inherits = FALSE)
   } else {
     if (dt == "ADDRESS_DETAIL_ID__by__LATLON") {
-      x <- fst::read_fst(system.file("extdata", "address2.fst",
+      x <- fst::read_fst(system.file("extdata",
+                                     "address2.fst",
                                      package = "PSMA"),
                          as.data.table = TRUE)
       x[, "LATITUDE" := lat_int + lat_rem / 10^7]
@@ -48,6 +49,32 @@ get_fst <- function(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
   }
 
   x[]
+}
+
+.Exists <- function(nom) {
+  is.environment(the_env <- getOption("PSMA_env")) && exists(nom, the_env)
+}
+
+.Assign <- function(nom, value) {
+  if (.Exists(nom)) {
+    return(.Get(nom))
+  }
+  if (is.environment(the_env <- getOption("PSMA_env"))) {
+    assign(nom, value, envir = the_env)
+  }
+  invisible(value)
+}
+
+.Get <- function(nom) {
+  if (.Exists(nom)) {
+    get0(nom, envir = getOption("PSMA_env"), inherits = FALSE)
+  }
+}
+
+.Clear <- function() {
+  if (is.environment(the_env <- getOption("PSMA_env"))) {
+    rm(list = ls(envir = the_env), envir = the_env)
+  }
 }
 
 

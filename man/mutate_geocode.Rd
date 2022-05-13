@@ -14,6 +14,7 @@ mutate_geocode(
   street_type = NULL,
   postcode = NULL,
   new_names = c("lat", "lon"),
+  approx = 0L,
   overwrite = FALSE
 )
 }
@@ -23,6 +24,8 @@ mutate_geocode(
 \item{flat_number, number_first, building_name, street_name, street_type, postcode}{Columns quoted or unquoted to be passed to \code{\link{geocode}}. If \code{NULL}, \code{DT} must the columns spelled the same as the arguments here.}
 
 \item{new_names}{Character vector of length-2 specifying the new names in the resulting \code{data.frame} for the latitude and longitude respectively.}
+
+\item{approx}{See \code{\link{geocode}}.}
 
 \item{overwrite}{If \code{new_names} are present in \code{DT}, should they be overwritten?}
 }
