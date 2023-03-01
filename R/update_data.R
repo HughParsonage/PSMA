@@ -132,6 +132,44 @@ update_data_auto <- function() {
     cat("STREET_LOCALITY_PID__STREET_NAME_STREET_TYPE_CODE created.\n")
   }
 
+
+  # meshblocks
+  ADDRESS_DETAIL_PID__ADDRESS_MESHBLOCK_2021 <-
+    dir(pattern = "_MESH_BLOCK_2021_psv.psv$",
+        path = LATEST,
+        recursive = TRUE,
+        full.names = TRUE) %>%
+    lapply(fread,
+           showProgress = FALSE,
+           na.strings = "",
+           select = c("ADDRESS_MESH_BLOCK_2021_PID",
+                      "ADDRESS_DETAIL_PID",
+                      "MB_2021_PID"
+                      )) %>%
+    rbindlist(use.names = TRUE, fill = TRUE) %>%
+    .[]
+
+  # mapping to code
+  MB_2021 <- dir(pattern = "_MB_2021_psv.psv$",
+                 path = LATEST,
+                 recursive = TRUE,
+                 full.names = TRUE) %>%
+    lapply(fread,
+           showProgress = FALSE,
+           na.strings = "",
+           select = c("MB_2021_PID",
+                      "MB_2021_CODE"
+           )) %>%
+    rbindlist(use.names = TRUE, fill = TRUE) %>%
+    .[]
+
+  ADDRESS_DETAIL_PID__ADDRESS_MESHBLOCK_2021[MB_2021,
+                                             on = "MB_2021_PID",
+                                             MB_2021_CODE := i.MB_2021_CODE]
+
+  ADDRESS_DETAIL_PID__ADDRESS_MESHBLOCK_2021[,MB_2021_PID := NULL]
+  ADDRESS_DETAIL_PID__ADDRESS_MESHBLOCK_2021[,ADDRESS_MESH_BLOCK_2021_PID := NULL]
+
   ADDRESS_DETAIL_INTRNL_ID <- NULL
 
   # Reduce the size of lookup tables by converting
@@ -141,12 +179,20 @@ update_data_auto <- function() {
     .[, list(ADDRESS_DETAIL_INTRNL_ID = .I,
              ADDRESS_DETAIL_PID)]
 
+
+
   ADDRESS_DETAIL_ID__by__LATLON <-
     ADDRESS_DETAIL_PID__by__LATLON[ADDRESS_DETAIL_PID_by_ID,
                                    j = list(ADDRESS_DETAIL_INTRNL_ID,
                                             LATITUDE,
                                             LONGITUDE),
                                    on = "ADDRESS_DETAIL_PID"]
+
+  ADDRESS_DETAIL_ID__ADDRESS_MESHBLOCK_2021 <-
+    ADDRESS_DETAIL_PID__ADDRESS_MESHBLOCK_2021[ADDRESS_DETAIL_PID_by_ID,
+                                               j=list(ADDRESS_DETAIL_INTRNL_ID, MB_2021_CODE),
+                                               on = "ADDRESS_DETAIL_PID"]
+  setkeyv(ADDRESS_DETAIL_ID__ADDRESS_MESHBLOCK_2021, "ADDRESS_DETAIL_INTRNL_ID")
 
   STREET_PID_vs_ADDRESS_ID <-
     STREET_PID_vs_ADDRESS_PID[ADDRESS_DETAIL_PID_by_ID,
@@ -191,6 +237,7 @@ update_data_auto <- function() {
     fwrite(ADDRESS_DETAIL_ID__by__LATLON, "tsv/ADDRESS_DETAIL_ID__by__LATLON.tsv", sep = "\t")
     fwrite(STREET_ID_vs_ADDRESS_ID, "tsv/STREET_ID_vs_ADDRESS_ID.tsv", sep = "\t")
     fwrite(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE, "tsv/STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE.tsv", sep = "\t")
+    fwrite(ADDRESS_DETAIL_ID__ADDRESS_MESHBLOCK_2021, "tsv/ADDRESS_DETAIL_ID__ADDRESS_MESHBLOCK_2021.csv", sep = "\t")
     if (just_tsv) {
       return(invisible(NULL))
     }
@@ -324,6 +371,7 @@ update_data_auto <- function() {
   write_dat_fst(addressB13_east)
   write_dat_fst(STREET_ID_vs_ADDRESS_ID)
   write_dat_fst(STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE)
+  write_dat_fst(ADDRESS_DETAIL_ID__ADDRESS_MESHBLOCK_2021)
 
   find_data_with_noms <- function(noms, just_act = TRUE) {
     all_files.psv <- dir(LATEST,
@@ -438,3 +486,22 @@ update_data_auto <- function() {
   DT[]
 }
 
+
+
+#' Import meshblock hierarchy
+#'
+#' https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/allocation-files/MB_2021_AUST.xlsx
+#' @param mbexcel
+#'
+#' @return
+#' @export
+#'
+#' @examples
+update_meshblock_map <- function(mbexcel) {
+  mb <- readxl::read_excel(mbexcel)
+  mb <- as.data.table(mb)
+  # mb codes need to stay as strings - too big for ints
+
+  #setkeyv(mb, "MB_CODE_2021")
+  return(mb)
+}
