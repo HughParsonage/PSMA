@@ -490,18 +490,39 @@ update_data_auto <- function() {
 
 #' Import meshblock hierarchy
 #'
+#' @param mbexcel path to excel file from link below
+#'
+#' @details converts the statistical area hierarchy, not including shapes, to a fst
 #' https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/allocation-files/MB_2021_AUST.xlsx
-#' @param mbexcel
 #'
-#' @return
+#' Should be integrated with the main update function
 #' @export
-#'
 #' @examples
+#' \dontrun{
+#' destxl <- file.path(tempdir(), "MB_2021_AUST.xlsx")
+#' download.file("https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/allocation-files/MB_2021_AUST.xlsx",
+#' destfile=destxl )
+#' update_meshblock_map(destxl)
+#' }
+#'
 update_meshblock_map <- function(mbexcel) {
+
+  write_dat_fst <- function(x) {
+    bd <- "./inst/extdata/"
+    if (dir.exists("./inst/extdata/")) {
+      b.fst <- paste0("inst/extdata/", deparse(substitute(x)), ".fst")
+    } else {
+      b.fst <- paste0(deparse(substitute(x)), ".fst")
+      b.fst <- system.file("extdata", b.fst, package = "PSMA")
+    }
+    fst::write_fst(x, b.fst, compress = 100)
+  }
   mb <- readxl::read_excel(mbexcel)
   mb <- as.data.table(mb)
-  # mb codes need to stay as strings - too big for ints
-
-  #setkeyv(mb, "MB_CODE_2021")
-  return(mb)
+  mb <- mb[MB_CATEGORY_2021 != "Outside Australia"]
+  mb[, MB_CODE_2021 := bit64::as.integer64(MB_CODE_2021)][, SA1_CODE_2021 := bit64::as.integer64(SA1_CODE_2021)][, SA2_CODE_2021 := as.integer(SA2_CODE_2021)][, SA3_CODE_2021 := as.integer(SA3_CODE_2021)][, SA4_CODE_2021 := as.integer(SA4_CODE_2021)]
+  setkeyv(mb, "MB_CODE_2021")
+  ABS_GEOGRAPHY_HIERARCHY <- mb
+  ABS_GEOGRAPHY_HIERARCHY[]
+  write_dat_fst(ABS_GEOGRAPHY_HIERARCHY)
 }
