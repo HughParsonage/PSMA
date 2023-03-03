@@ -15,7 +15,9 @@ get_fst <- function(dt = c("ADDRESS_DETAIL_ID__by__LATLON",
                            "STREET_ID_vs_ADDRESS_ID",
                            "STREET_LOCALITY_ID__STREET_NAME_STREET_TYPE_CODE",
                            "addressB13_west",
-                           "addressB13_east"),
+                           "addressB13_east",
+                           "ABS_GEOGRAPHY_HIERARCHY",
+                           "ADDRESS_DETAIL_ID__ADDRESS_MESHBLOCK_2021"),
                     cache_env = TRUE) {
   dt <- dt[1]
   psma_env <- getOption("PSMA_env", new.env())
